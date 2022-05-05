@@ -1,0 +1,29 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@1.5.0
+  codecov: codecov/codecov@3.2.2
+
+jobs:
+  test:
+    docker:
+      - image: cimg/python:3.8.12
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+      - run:
+          name: Run tests
+          command: python -m unittest discover
+      - run:
+          name: Gen coverage
+          command: pip install coverage && python -m coverage run -m unittest discover && python -m coverage xml
+      - codecov/upload:
+          file: coverage.xml
+          flags: unittests
+          upload_name: ProxyCollect
+
+workflows:
+  test:
+    jobs:
+      - test
