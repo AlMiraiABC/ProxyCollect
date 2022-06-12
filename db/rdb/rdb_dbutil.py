@@ -25,7 +25,7 @@ class RDBDbUtil(BaseDbUtil):
                 .where(TBProxy.verify == proxy.verify)
             ).first()
             if stored:
-                return self.to_storedproxy(stored)
+                return None
             session.add(instance)
             session.commit()
             return self.to_storedproxy(instance)

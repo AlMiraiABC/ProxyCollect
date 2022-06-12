@@ -46,7 +46,7 @@ class _TBBaseClass():
                         server_default=func.now(), server_onupdate=func.now())
 
 
-class TBProxy(StoredProxy, _TBBaseClass, Base):
+class TBProxy(_TBBaseClass, Base, StoredProxy):
     __tablename__ = 'proxy'
     protocol = Column("protocol", IntEnum(Protocol), nullable=False)
     ip = Column("ip", String, nullable=False)
