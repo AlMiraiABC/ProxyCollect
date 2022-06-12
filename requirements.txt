@@ -1,2 +1,4 @@
-SQLAlchemy
 aiohttp
+al-utils-almirai
+pymysql
+sqlalchemy
