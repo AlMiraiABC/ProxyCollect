@@ -1,4 +1,4 @@
-FROM almirai/python:3.8.12-alpine
+FROM almirai/python:3.10.4-alpine
 COPY requirements.txt .
 USER root
 ENV PATH /home/appuser/.local/bin:$PATH

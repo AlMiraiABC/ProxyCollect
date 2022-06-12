@@ -1,4 +1,4 @@
-FROM almirai/python:3.8.12-alpine
+FROM python:3.10.4-alpine
 LABEL author="almirai"
 LABEL email="live.almirai@outlook.com"
 LABEL version="0.1"
