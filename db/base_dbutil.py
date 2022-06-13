@@ -49,7 +49,8 @@ class BaseDbUtil(ABC):
         pass
 
     @abstractmethod
-    async def gets(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None) -> List[StoredProxy]:
+    async def gets(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
+                   limit: int = 100, offset: int = 0) -> List[StoredProxy]:
         """
         Get proxies by given conditions.
         """
