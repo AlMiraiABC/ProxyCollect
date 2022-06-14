@@ -52,7 +52,8 @@ class TBProxy(_TBBaseClass, Base, StoredProxy):
     ip = Column("ip", String, nullable=False)
     port = Column("port", SmallInteger, nullable=False)
     verify = Column("verify", IntEnum(Verify), nullable=False)
-    anonymous = Column("anonymous", IntEnum(Anonymous), nullable=False)
+    anonymous = Column("anonymous", IntEnum(Anonymous),
+                       server_default=text('1'), nullable=False)
     domestic = Column("domestic", Boolean,
                       server_default=text('1'), nullable=False)
     address = Column("address", String, nullable=True)
