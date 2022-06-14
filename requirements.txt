@@ -1,4 +1,5 @@
 aiohttp
 al-utils-almirai
 pymysql
+requests
 sqlalchemy
