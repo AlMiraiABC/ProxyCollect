@@ -83,6 +83,18 @@ class Proxy:
             return True
         return False
 
+    def __repr__(self):
+        return (f"<{self.__class__.__name__}>"
+                f"{{protocol: {self._protocol}, "
+                f"ip: {self._ip}, "
+                f"port: {self._port}, "
+                f"verify: {self._verify}, "
+                f"anonymous: {self._anonymous}, "
+                f"domestic: {self.domestic}, "
+                f"address: {self.address}, "
+                f"speed: {self.speed}, "
+                f"}}")
+
     def __hash__(self) -> int:
         return hash(self.protocol.name+self.ip+self.port+self.verify.name)
 
@@ -107,3 +119,17 @@ class StoredProxy(Proxy):
     @property
     def score(self):
         return self._score
+
+    def __repr__(self):
+        return (f"<{self.__class__.__name__}>"
+                f"{{id: {self._id}, "
+                f"protocol: {self._protocol}, "
+                f"ip: {self._ip}, "
+                f"port: {self._port}, "
+                f"verify: {self._verify}, "
+                f"anonymous: {self._anonymous}, "
+                f"score: {self._score}, "
+                f"domestic: {self.domestic}, "
+                f"address: {self.address}, "
+                f"speed: {self.speed}, "
+                f"}}")
