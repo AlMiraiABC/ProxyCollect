@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Callable, Dict, TypedDict
 
 from util.config_util import ConfigUtil
 from util.ip import PublicIP
@@ -26,7 +26,7 @@ class RDBConfig:
                    f'{HOST}:{PORT}/{DB}?charset={CHARSET}')
     # other parameters
     # see more: https://docs.sqlalchemy.org/en/14/core/engines.html?highlight=create_engine#sqlalchemy.create_engine.params
-    EXTRA: Dict[str, Any] = get('extra', {})
+    EXTRA: Dict[str, any] = get('extra', {})
 
 
 class DBConfig:
@@ -43,3 +43,20 @@ class ValidConfig:
 
     PUBLIC_IP: str = get('pubip', PublicIP.public_ip())
     TIMEOUT: float = get('timeout', 5)
+
+
+class CrawlDetailConfig(TypedDict):
+    headers: dict[str, str]
+    semaphore: int
+    timeout: int
+
+
+class CrawlConfig:
+    def get(k: str, d: any):
+        return ConfigUtil().get_key(f'valid.{k}', f'_CRAWL_{k.upper()}', d)
+
+    DETAIL: Callable[[str, CrawlDetailConfig],
+                     CrawlDetailConfig] = lambda k, d: CrawlConfig.get(k, d)
+    HEADERS: dict[str, str] = get('headers', {})
+    SEMAPHORE: int = get('semaphore', 10)
+    TIMEOUT: int = get('timeout', 10)

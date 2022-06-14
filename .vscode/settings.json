@@ -11,7 +11,8 @@
     "conventionalCommits.scopes": [
         "db",
         "test",
-        "util"
+        "util",
+        "crawl"
     ],
     "python.envFile": "${workspaceFolder}/.env"
 }
