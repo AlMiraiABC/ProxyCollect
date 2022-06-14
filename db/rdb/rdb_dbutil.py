@@ -29,7 +29,7 @@ class RDBDbUtil(BaseDbUtil):
             session.commit()
             return self.to_storedproxy(inserted)
 
-    def _update(self, proxy: StoredProxy, cb: Callable[[TBProxy], TBProxy]) -> StoredProxy | None:
+    async def _update(self, proxy: StoredProxy, cb: Callable[[TBProxy], TBProxy]) -> StoredProxy | None:
         with self.Session() as session:
             instance = self.dao.get_by_id(session, proxy.id)
             if not instance:
@@ -44,19 +44,19 @@ class RDBDbUtil(BaseDbUtil):
         def set_socre(i: TBProxy):
             i.score += step
             return i
-        return self._update(proxy, set_socre)
+        return await self._update(proxy, set_socre)
 
     async def decrease_score(self, proxy: StoredProxy, step=1) -> StoredProxy | None:
         def set_socre(i: TBProxy):
             i.score -= step
             return i
-        return self._update(proxy, set_socre)
+        return await self._update(proxy, set_socre)
 
     async def update_speed(self, proxy: StoredProxy, new_speed: float) -> StoredProxy | None:
         def set_socre(i: TBProxy):
             i.speed = new_speed
             return i
-        return self._update(proxy, set_socre)
+        return await self._update(proxy, set_socre)
 
     async def gets(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
                    limit: int = 100, offset: int = 0) -> list[StoredProxy]:

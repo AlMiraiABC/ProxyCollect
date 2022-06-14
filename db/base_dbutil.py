@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Callable
 
 from db.model import Anonymous, Protocol, Proxy, StoredProxy, Verify
 
@@ -11,6 +12,17 @@ class BaseDbUtil(ABC):
 
         :param proxy: Proxy
         :returns: Inserted proxy if not exists, otherwise None.
+        """
+        pass
+
+    @abstractmethod
+    async def _update(self, proxy: StoredProxy, cb: Callable[[StoredProxy], StoredProxy]) -> StoredProxy | None:
+        """
+        Update :param:`proxy`.
+
+        :param proxy: `Proxy` to update.
+        :param cb: Callback to update :param:`proxy`'s attributes.
+        :returns: Updated proxy if successfully, otherwise None.
         """
         pass
 

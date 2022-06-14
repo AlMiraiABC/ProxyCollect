@@ -1,3 +1,5 @@
+from typing import Callable
+
 from al_utils.singleton import Singleton
 from config import DBConfig
 
@@ -43,6 +45,12 @@ class DbUtil(BaseDbUtil, Singleton):
             proxy.anonymous = Anonymous.TRANSPARENT
         proxy.verify = verify
         return await self.db.try_insert(proxy)
+
+    async def _update(self, proxy: StoredProxy, cb: Callable[[StoredProxy], StoredProxy]) -> StoredProxy | None:
+        if not proxy.id:
+            raise ValueError(f"id must be set, "
+                             f"but got {proxy}")
+        return await self.db._update(proxy)
 
     async def increase_score(self, proxy: StoredProxy, step=1) -> StoredProxy | None:
         if not proxy.id:
