@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import List, Tuple
 
 from db.model import Anonymous, Protocol, Proxy, StoredProxy, Verify
 
@@ -50,7 +49,7 @@ class BaseDbUtil(ABC):
 
     @abstractmethod
     async def gets(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
-                   limit: int = 100, offset: int = 0) -> List[StoredProxy]:
+                   limit: int = 100, offset: int = 0) -> list[StoredProxy]:
         """
         Get proxies by given conditions.
         """
