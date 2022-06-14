@@ -55,3 +55,10 @@ class BaseDbUtil(ABC):
         Get proxies by given conditions.
         """
         pass
+
+    @abstractmethod
+    async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None) -> int:
+        """
+        Get count number by given conditions.
+        """
+        pass

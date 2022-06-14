@@ -63,21 +63,33 @@ class RDBDbUtil(BaseDbUtil):
         limit = limit if limit and limit >= 0 else 100
         offset = offset if offset and offset >= 0 else 0
         with self.Session() as session:
-            query = session.query(TBProxy)
-            if protocol:
-                query = query.filter(TBProxy.protocol == protocol)
-            if ip:
-                query = query.filter(TBProxy.ip == ip)
-            if port:
-                query = query.filter(TBProxy.port == port)
-            if verify:
-                query = query.filter(TBProxy.verify == verify)
-            if anonymous:
-                query = query.filter(TBProxy.anonymous == anonymous)
-            if domestic:
-                query = query.filter(TBProxy.domestic == domestic)
+            query = self._gen_query(session, protocol, ip, port,
+                                    verify, anonymous, domestic)
             results: list[TBProxy] = query.offset(offset).limit(limit).all()
             return [self.to_storedproxy(r) for r in results]
+
+    async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None) -> int:
+        with self.Session() as session:
+            query = self._gen_query(session, protocol, ip, port,
+                                    verify, anonymous, domestic)
+            result: int = query.count()
+            return result
+
+    def _gen_query(self, session: Session, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None):
+        query = session.query(TBProxy)
+        if protocol:
+            query = query.filter(TBProxy.protocol == protocol)
+        if ip:
+            query = query.filter(TBProxy.ip == ip)
+        if port:
+            query = query.filter(TBProxy.port == port)
+        if verify:
+            query = query.filter(TBProxy.verify == verify)
+        if anonymous:
+            query = query.filter(TBProxy.anonymous == anonymous)
+        if domestic:
+            query = query.filter(TBProxy.domestic == domestic)
+        return query
 
     def to_storedproxy(self, proxy: TBProxy) -> StoredProxy | None:
         """Convert :class:`TBProxy` :param:`proxy` to :class:`StoredProxy`"""
@@ -124,7 +136,8 @@ class _RDBDAO:
         uniq = ['protocol', 'ip', 'port', 'verify']
         query = session.query(TBProxy)
         for col in uniq:
-            query = query.filter(getattr(TBProxy, col) == getattr(instance, col))
+            query = query.filter(getattr(TBProxy, col) ==
+                                 getattr(instance, col))
         return query.first()
 
     def update(self, session: Session, instance: TBProxy) -> TBProxy | None:
