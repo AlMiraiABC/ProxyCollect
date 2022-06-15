@@ -1,7 +1,7 @@
 from copy import copy
 from enum import Enum, unique
 
-from util.ip_util import IpUtil
+from util.ip import is_formed_ipv4
 
 
 @unique
@@ -35,7 +35,7 @@ class Proxy:
     def __init__(self, protocol: Protocol, ip: str, port: int, verify: Verify, anonymous: Anonymous,
                  domestic: bool = True, address: str = '', speed: float = 0):
         self._protocol = protocol
-        if not IpUtil.is_formed_ipv4(ip):
+        if not is_formed_ipv4(ip):
             raise ValueError("Invalid ip format")
         self._ip = ip
         if not port or int(port) < 1 or int(port) > 65535:
