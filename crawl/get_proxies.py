@@ -1,8 +1,8 @@
 import asyncio
 import random
 import re
-import time
 from asyncio import Semaphore
+from typing import Callable
 
 from aiohttp import ClientSession
 from al_utils.logger import Logger
@@ -16,30 +16,35 @@ CRAW_RET = tuple[list[Proxy], list[str], list[str]]
 """
 
 
-'''
-66免费代理网 http://www.66ip.cn/ http://www.66daili.cn/
-89免费代理 http://www.89ip.cn/
-云代理 http://www.ip3366.net/
-√ 快代理 https://www.kuaidaili.com/
-小幻HTTP代理 https://ip.ihuan.me/
-'''
-
-
 class GetFreeProxy:
     """
     获得互联网上的公开代理
+
+    Support
+    -------------
+    - 快代理 https://www.kuaidaili.com/
+    - 泥马代理 http://www.nimadaili.com
+    - 66免费代理网 http://www.66ip.cn/ http://www.66daili.cn/
+    - 89免费代理 http://www.89ip.cn/
+    - 云代理 http://www.ip3366.net/
+    - 小幻HTTP代理 https://ip.ihuan.me/
     """
 
     @staticmethod
-    def _get_one_proxy(anonymous: Anonymous = None,
-                       domestic: bool = True,
-                       protocol: Protocol = None,
-                       check_count: int = 20) -> str:
+    def _get_one_proxy(protocol: Protocol = Protocol.HTTPS, anonymous: Anonymous = Anonymous.HIGH, check_count: int = 20,
+                       cb: Callable[[Protocol, Anonymous, int], Proxy] = None) -> str:
         """
         Get a proxy string. <protocol://ip:port>
+
+        :param check_count: Valid :param:`check_count` times to get a usable proxy.
+        :param cb: Callback to get a proxy. `(protocol, anonymous, check_count) => proxy`
+        :return: Proxy if found. After :param:`check_count` times doesn't get a usable proxy, return None.
         """
-        return Converter.dict2url(
-            api.checkout(anonymous, domestic, protocol, hide, speed_type, check_type, check_count))
+        cb = cb or (lambda *_: None)
+        proxy = cb(protocol, anonymous, check_count)
+        if not proxy:
+            return ''
+        return f'{proxy.protocol.name.lower()}://{proxy.ip}:{proxy.port}'
 
     @staticmethod
     async def kuaidaili(page_start: int = 1, page_end: int = 1, headers={}, timeout: int = 10, semaphore: int = 10) -> CRAW_RET:
@@ -159,7 +164,8 @@ class GetFreeProxy:
                                     try:
                                         ps = to_proxy(result)
                                     except Exception as e:
-                                        logger.error(f'Cannot convert {result} when get {url}.')
+                                        logger.error(
+                                            f'Cannot convert {result} when get {url}. {e}')
                                     else:
                                         proxies.extend(ps)
                         except Exception as ex:
