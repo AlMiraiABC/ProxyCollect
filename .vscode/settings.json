@@ -12,7 +12,8 @@
         "db",
         "test",
         "util",
-        "crawl"
+        "crawl",
+        "services"
     ],
     "python.envFile": "${workspaceFolder}/.env"
 }

@@ -61,6 +61,10 @@ class ValidConfig:
     """Public ip address of host."""
     TIMEOUT: float = float(get('timeout', 5))
     """Time seconds to wait for connection."""
+    SEMAPHORE: int = int(get('semaphore', 50))
+    """The maximum number of concurrent."""
+    PATCH:int = int(get('patch',500))
+    """Number of each epoch."""
 
 
 class CrawlDetailConfig(TypedDict):

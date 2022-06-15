@@ -77,4 +77,5 @@ class PublicIP:
                 if response.status == 200:
                     # response.json() will check content type
                     # may return a json but content-type in header is html/text.
+                    # https://docs.aiohttp.org/en/stable/client_advanced.html#disabling-content-type-validation-for-json-responses
                     return (await response.text()).strip()
