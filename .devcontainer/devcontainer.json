@@ -32,12 +32,12 @@
 		"cssho.vscode-svgviewer",
 		"visualstudioexptteam.vscodeintellicode",
 		"ms-vscode.vs-keybindings",
-		// "redhat.vscode-xml", // need java runtime
 		"redhat.vscode-yaml",
 		"ms-ceintl.vscode-language-pack-zh-hans",
 		"vivaxy.vscode-conventional-commits",
 		"ryanluker.vscode-coverage-gutters",
-		"TabNine.tabnine-vscode"
+		// "TabNine.tabnine-vscode",
+		"GitHub.copilot"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
