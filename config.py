@@ -80,7 +80,7 @@ class CrawlDetailConfig(TypedDict):
 class CrawlConfig:
     """Crawls common configs. Priority lower than :class:`CrawlDetailConfig`"""
     def get(k: str, d: any):
-        return ConfigUtil().get_key(f'valid.{k}', f'_CRAWL_{k.upper()}', d)
+        return ConfigUtil().get_key(f'crawl.{k}', f'_CRAWL_{k.upper()}', d)
 
     def DETAIL(k: CrawlDetailConfig, d: CrawlDetailConfig):
         """Get type of :param:`k`'s detail config."""
