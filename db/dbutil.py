@@ -1,5 +1,6 @@
 from typing import Callable
 
+from al_utils.meta import merge_meta
 from al_utils.singleton import Singleton
 from config import DBConfig
 
@@ -8,7 +9,7 @@ from db.model import Anonymous, Protocol, Proxy, StoredProxy, Verify
 from db.rdb.rdb_dbutil import RDBDbUtil
 
 
-class DbUtil(BaseDbUtil, Singleton):
+class DbUtil(merge_meta(BaseDbUtil, Singleton)):
     def __init__(self):
         self.db: BaseDbUtil
         match DBConfig.TYPE:
