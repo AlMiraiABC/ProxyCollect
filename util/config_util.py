@@ -27,7 +27,8 @@ class ConfigUtil(Singleton):
         :param default: The default value.
         :return: env > config > default
         """
-        return os.getenv(f"{self._PREFIX}{env_key}") or self._get(self.config, key.split('.')) or default
+        env_var = os.getenv(env_key) if env_key else None
+        return env_var or self._get(self.config, key.split('.')) or default
 
     def _get(self, d: dict, keys: list[str]):
         if len(keys) == 1:
