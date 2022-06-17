@@ -1,7 +1,8 @@
 import asyncio
 import time
-from asyncio import AbstractEventLoop, Queue, Semaphore
+from asyncio import Queue
 from multiprocessing import Event
+from typing import Callable
 
 from aiohttp import ClientSession
 from al_utils.logger import Logger
@@ -13,8 +14,8 @@ logger = Logger(__file__).logger
 
 
 class ValidService:
-    def __init__(self, patch: int = 500, semaphore: int = 50, loop: AbstractEventLoop = None):
-        self.patch = patch if patch > 50 else 500
+    def __init__(self, patch: int = 500, semaphore: int = 50):
+        self.patch = patch if patch >= 50 else 500
         self.semaphore = semaphore if semaphore > 10 else 50
         self._cursor: int = 0
         """
@@ -24,14 +25,15 @@ class ValidService:
         self._db = DbUtil()
         self._valid = Valid()
         self._stop = Event()
-        self._queue: Queue[StoredProxy] = Queue(patch*1.2, loop=loop)
+        self._queue: Queue[StoredProxy] = Queue(patch*1.2)
 
     async def get_patch(self) -> list[StoredProxy]:
         """Get next patch proxies."""
         proxies = await self._db.gets(limit=self.patch, offset=self._cursor)
         if not proxies:
             self._cursor = -1
-        self._cursor += self.patch
+        else:
+            self._cursor += len(proxies)
         return proxies
 
     async def update(self, session: ClientSession, proxy: StoredProxy):
@@ -48,15 +50,21 @@ class ValidService:
                            f'{{anonymous: {anonymous}, speed: {speed}}}')
         return ret
 
-    async def valid_proxies(self, proxies: list[StoredProxy]):
-        ret: list[StoredProxy] = []
+    async def valid_proxies(self):
+        """
+        Get proxies from queue and valid it.
+
+        Updated proxy will put in `rqueue`.
+        """
+        updated: list[StoredProxy] = []
         async with ClientSession() as session:
             async with asyncio.Semaphore(self.semaphore):
-                for proxy in proxies:
-                    ret.append(await self.update(session, proxy))
-        return ret
+                while not self._queue.empty() and not self._stop.is_set():
+                    proxy = await self._queue.get()
+                    updated.append(await self.update(session, proxy))
+        return updated
 
-    async def run_patch(self) -> list[StoredProxy]:
+    async def run_patch(self):
         """
         Run one patch.
 
@@ -65,24 +73,20 @@ class ValidService:
         proxies = await self.get_patch()
         for proxy in proxies:
             await self._queue.put(proxy)
-        ret = []
-        async with ClientSession() as session:
-            async with Semaphore(self.semaphore):
-                while not self._queue.empty() and not self._stop.is_set():
-                    proxy = await self._queue.get()
-                    ret.append(self.update(session, proxy))
-        return ret
+        return self.valid_proxies()
 
-    async def run(self):
+    async def run(self, patch_cb: Callable[[list[StoredProxy]], None] = None):
         """
         Start or continue to run valid service.
 
         Valid all proxies in one ioloop. This is IO bound tasks and multiprocessing will not
         imporve efficiency.
         """
+        patch_cb = patch_cb or (lambda *_: None)
         if self._cursor < 0:
             raise RuntimeError('Service already stopped.')
         logger.info(f"Running valid service with {self.max_workers} workers.")
+        count, fails, timeouts = 0, 0, 0
         self._stop.clear()
         while self._cursor >= 0 and not self._stop.is_set():
             logger.info(f"Get patch from {self._cursor}.")
@@ -90,13 +94,28 @@ class ValidService:
             results = await self.run_patch()
             logger.info(f"The patch {self._cursor}-{self._cursor+self.patch} finished "
                         f"in {time.time()-start_time} seconds.")
-            count = len(results)
-            fails = [result for result in results if not result]
-            timeouts = [result for result in results
-                        if result and result.speed == -1]
-            logger.info(f"The The patch {self._cursor}-{self._cursor+self.patch} valid {count} proxies, "
-                        f"{len(fails)} failed and"
-                        f"{len(timeouts)} timed out.")
+            c, f, t = self._count(results)
+            logger.info(f"The The patch {self._cursor}-{self._cursor+self.patch} valid {c} proxies, "
+                        f"{f} failed and"
+                        f"{t} timed out.")
+            count += c
+            fails += f
+            timeouts += t
+        self._stop.set()
+        return count, fails, timeouts
+
+    def _count(self, proxies: list[StoredProxy]):
+        """
+        Reduce updated proxies.
+
+        :param updated: Updated proxies.
+        :returns: len(proxies), len(proxy is None), len(proxy.speed is -1)
+        """
+        c = len(proxies)
+        f = len([proxy for proxy in proxies if not proxy])
+        t = len([proxy for proxy in proxies
+                 if proxy and proxy.speed == -1])
+        return c, f, t
 
     async def pause(self):
         """
