@@ -73,3 +73,11 @@ class BaseDbUtil(ABC):
         Get count number by given conditions.
         """
         pass
+
+    @abstractmethod
+    async def gets_random(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
+                          limit: int = 100) -> list[StoredProxy]:
+        """
+        Get random proxies by given conditions.
+        """
+        pass

@@ -87,3 +87,9 @@ class DbUtil(merge_meta(BaseDbUtil, Singleton)):
 
     async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None) -> int:
         return await self.db.count(protocol, ip, port, verify, anonymous, domestic)
+
+    async def gets_random(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
+                          limit: int = 100) -> list[StoredProxy]:
+        if not limit or limit < 0:
+            limit = 100
+        return await self.db.gets_random(protocol, ip, port, verify, anonymous, domestic, limit)

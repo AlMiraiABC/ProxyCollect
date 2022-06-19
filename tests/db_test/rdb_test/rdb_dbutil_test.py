@@ -114,3 +114,29 @@ class TestRDBDbUtil(IsolatedAsyncioTestCase):
             [session.delete(i) for i in ins]
             session.commit()
             session.close()
+
+    async def test_gets_random(self):
+        session = self.util.Session()
+        ins = [
+            TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.1', port=3306,
+                    verify=Verify.HTTPS, anonymous=Anonymous.HIGH),
+            TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.2', port=3306,
+                    verify=Verify.HTTPS, anonymous=Anonymous.HIGH),
+            TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.3', port=3306,
+                    verify=Verify.UDP, anonymous=Anonymous.HIGH)
+        ]
+        try:
+            session.add_all(ins)
+            session.commit()
+            # SELECT...
+            # FROM proxy
+            # WHERE proxy.protocol = %(protocol_1)s AND proxy.verify = %(verify_1)s
+            # ORDER BY rand()
+            # LIMIT 2
+            proxies = await self.util.gets_random(protocol=Protocol.HTTPS, verify=Verify.HTTPS, limit=2)
+            self.assertTrue(set([p.id for p in ins]) >
+                            set([p.id for p in proxies]))
+        finally:
+            [session.delete(i) for i in ins]
+            session.commit()
+            session.close()

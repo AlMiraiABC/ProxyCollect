@@ -5,7 +5,7 @@ from config import RDBConfig
 from db.base_dbutil import BaseDbUtil
 from db.model import Anonymous, Protocol, Proxy, StoredProxy, Verify
 from db.rdb.model import TBProxy
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import Session, sessionmaker
 
 logger = Logger(__file__).logger
@@ -74,6 +74,16 @@ class RDBDbUtil(BaseDbUtil):
                                     verify, anonymous, domestic)
             result: int = query.count()
             return result
+
+    async def gets_random(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None, limit: int = 100) -> list[StoredProxy]:
+        with self.Session() as session:
+            query = self._gen_query(session, protocol, ip, port,
+                                    verify, anonymous, domestic)
+            # https://docs.sqlalchemy.org/en/14/core/functions.html#sqlalchemy.sql.functions.random
+            # https://stackoverflow.com/a/33583008
+            results: list[TBProxy] = query.order_by(
+                func.random()).limit(limit).all()
+            return [self.to_storedproxy(r) for r in results]
 
     def _gen_query(self, session: Session, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None):
         query = session.query(TBProxy)
