@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session as S
-from config import RDBConfig
+from util.config import RDBConfig
 from db.model import Anonymous, Protocol, Verify
 from db.rdb.model import TBProxy
 

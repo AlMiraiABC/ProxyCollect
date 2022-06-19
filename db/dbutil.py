@@ -2,7 +2,7 @@ from typing import Callable
 
 from al_utils.meta import merge_meta
 from al_utils.singleton import Singleton
-from config import DBConfig
+from util.config import DBConfig
 
 from db.base_dbutil import BaseDbUtil
 from db.model import Anonymous, Protocol, Proxy, StoredProxy, Verify

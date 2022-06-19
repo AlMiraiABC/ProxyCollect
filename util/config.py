@@ -63,31 +63,42 @@ class ValidConfig:
     """Time seconds to wait for connection."""
     SEMAPHORE: int = int(get('semaphore', 50))
     """The maximum number of concurrent."""
-    PATCH:int = int(get('patch',500))
+    PATCH: int = int(get('patch', 500))
     """Number of each epoch."""
 
 
-class CrawlDetailConfig(TypedDict):
-    """The detail config of each type of crawl."""
-    headers: dict[str, str]
-    """Request headers."""
-    semaphore: int
-    """The maximum number of concurrent."""
-    timeout: int
-    """Time seconds to wait for connection."""
+class CrawlsCrawlerConfig(TypedDict):
+    """Config of crawls.crawlers"""
+    callable: str
+    args: list
+    kwargs: dict[str, any]
 
 
-class CrawlConfig:
-    """Crawls common configs. Priority lower than :class:`CrawlDetailConfig`"""
+class CrawlsConfig:
+    """
+    Crawls configs.
+
+    NOTE:
+    Environment variables are not supported.
+    """
     def get(k: str, d: any):
-        return ConfigUtil().get_key(f'crawl.{k}', f'_CRAWL_{k.upper()}', d)
+        return ConfigUtil().get_key(f'crawl.{k}', None, d)
 
-    def DETAIL(k: CrawlDetailConfig, d: CrawlDetailConfig):
-        """Get type of :param:`k`'s detail config."""
-        return CrawlConfig.get(k, d)
-    HEADERS: dict[str, str] = get('headers', {})
-    """Common headers."""
-    SEMAPHORE: int = int(get('semaphore', 10))
-    """The maximum number of concurrent."""
-    TIMEOUT: int = int(get('timeout', 10))
-    """Time seconds to wait for connection."""
+    Crawlers: list[CrawlsCrawlerConfig] = get('crawlers', [])
+    """
+    Configured crawlers.
+    """
+
+
+class APIConfig:
+    def get(k: str, d: any):
+        return ConfigUtil().get_key(f'api.{k}', f'_API_{k.upper()}', d)
+
+    MAX_LIMIT: int = int(get('max_limit', 100))
+    """Maximum total number of queried proxies."""
+    BACKFILL: bool = bool(get('backfill', False))
+    """
+    Whether update proxy when check in query.
+
+    If True, the dbuser must have update privilege.
+    """

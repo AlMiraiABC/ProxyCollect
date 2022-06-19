@@ -1,7 +1,7 @@
 from typing import Callable
 
 from al_utils.logger import Logger
-from config import RDBConfig
+from util.config import RDBConfig
 from db.base_dbutil import BaseDbUtil
 from db.model import Anonymous, Protocol, Proxy, StoredProxy, Verify
 from db.rdb.model import TBProxy
