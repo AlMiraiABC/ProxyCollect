@@ -89,6 +89,8 @@ class CrawlsConfig:
     """
     Configured crawlers.
     """
+    SEMAPHORE: int = int(get('semaphore', 10))
+    """The maximum number of concurrent."""
 
 
 class APIConfig:

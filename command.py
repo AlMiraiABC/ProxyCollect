@@ -8,10 +8,10 @@ def help():
     """Print help message."""
     print("""Proxy Collect 2.0 https://github.com/AlMiraiABC/ProxyCollect
 ARG:
-    c, crawl\tCrawl proxies.
-    v, valid\tValid proxies.
+    c, crawl    Crawl proxies.
+    v, valid    Valid proxies.
 PARAM:
-    -h, --help\tHelp.""")
+    -h, --help  Help.""")
     exit(0)
 
 
