@@ -1,7 +1,6 @@
 from typing import Callable
 
 from al_utils.logger import Logger
-from util.config import RDBConfig
 from db.base_dbutil import BaseDbUtil
 from db.model import Anonymous, Protocol, Proxy, StoredProxy, Verify
 from db.rdb.model import TBProxy
@@ -13,8 +12,8 @@ logger = Logger(__file__).logger
 
 class RDBDbUtil(BaseDbUtil):
     def __init__(self, url: str = '', **kwargs):
-        self.engine = create_engine(url or RDBConfig.URL, pool_size=5, max_overflow=3,
-                                    echo=True, echo_pool=True, **(kwargs or RDBConfig.EXTRA))
+        self.engine = create_engine(url, pool_size=5, max_overflow=3,
+                                    echo=True, echo_pool=True, **kwargs)
         self.Session: Callable[[], Session] = sessionmaker(self.engine)
         self.dao = _RDBDAO()
 

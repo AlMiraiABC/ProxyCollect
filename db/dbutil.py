@@ -2,7 +2,7 @@ from typing import Callable
 
 from al_utils.meta import merge_meta
 from al_utils.singleton import Singleton
-from util.config import DBConfig
+from util.config import DBConfig, RDBConfig
 
 from db.base_dbutil import BaseDbUtil
 from db.model import Anonymous, Protocol, Proxy, StoredProxy, Verify
@@ -14,7 +14,7 @@ class DbUtil(merge_meta(BaseDbUtil, Singleton)):
         self.db: BaseDbUtil
         match DBConfig.TYPE:
             case 'rdb':
-                self.db = RDBDbUtil()
+                self.db = RDBDbUtil(RDBConfig.URL, **RDBConfig.EXTRA)
             case _:
                 raise ValueError(f'Unsupported db type, got {DBConfig.TYPE}')
 
