@@ -68,7 +68,7 @@ def main(argv: list):
             sem = int(arg)
     ConfigUtil(cf)  # Init once. Singleton.
     logger.info('Starting crawl...')
-    i, e, f = asyncio.run(run(CrawlsConfig.Crawlers, sem))
+    i, e, f = asyncio.run(run(CrawlsConfig.CRAWLERS, sem))
     logger.info(f'Crawl finished. Inserted: {i}, exist: {e}, failed: {f}')
     ColoredConsole.success(f'Insert {i} proxies.')
     ColoredConsole.warn(f'Exist {e} proxies.', emoji='📀 ')

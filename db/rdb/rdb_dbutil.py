@@ -12,8 +12,7 @@ logger = Logger(__file__).logger
 
 class RDBDbUtil(BaseDbUtil):
     def __init__(self, url: str = '', **kwargs):
-        self.engine = create_engine(url, pool_size=5, max_overflow=3,
-                                    echo=True, echo_pool=True, **kwargs)
+        self.engine = create_engine(url, **kwargs)
         self.Session: Callable[[], Session] = sessionmaker(self.engine)
         self.dao = _RDBDAO()
 
@@ -26,6 +25,7 @@ class RDBDbUtil(BaseDbUtil):
             if not inserted:
                 return None
             session.commit()
+            logger.debug(f'inserted {inserted.id}.')
             return self.to_storedproxy(inserted)
 
     async def _update(self, proxy: StoredProxy, cb: Callable[[TBProxy], TBProxy]) -> StoredProxy | None:

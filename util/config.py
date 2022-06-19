@@ -35,9 +35,13 @@ class RDBConfig:
         f'{ENGINE}://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DB}?charset={CHARSET}'
     )
     """Connect url."""
-    EXTRA: Dict[str, any] = get('extra', {})
+    EXTRA: Dict[str, any] = ConfigUtil().get_key(f'db.rdb.extra', default={})
     """
-    Other parameters
+    Other parameters.
+
+    NOTE:
+    --------
+    Environment variables are not supported.
 
     See:
     ---------
@@ -85,7 +89,7 @@ class CrawlsConfig:
     def get(k: str, d: any):
         return ConfigUtil().get_key(f'crawl.{k}', None, d)
 
-    Crawlers: list[CrawlsCrawlerConfig] = get('crawlers', [])
+    CRAWLERS: list[CrawlsCrawlerConfig] = get('crawlers', [])
     """
     Configured crawlers.
     """

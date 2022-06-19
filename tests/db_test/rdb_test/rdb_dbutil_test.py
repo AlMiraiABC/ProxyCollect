@@ -8,7 +8,7 @@ from db.rdb.rdb_dbutil import RDBDbUtil
 
 class TestRDBDbUtil(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
-        self.util = RDBDbUtil()
+        self.util = RDBDbUtil(echo=True)
         return await super().asyncSetUp()
 
     def _delete(self, id: int):
