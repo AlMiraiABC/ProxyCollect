@@ -40,8 +40,8 @@ class Valid:
         time_start = time.time()
         try:
             anon = self.req_ifconfig(proxy, timeout)
-        except Exception as ex:
-            logger.warning(f'Raise {ex} when send request to ifconfig.')
+        except:
+            logger.warning(f'Cannot get from ifconfig.', exc_info=True)
             return -1, Anonymous.TRANSPARENT
         else:
             time_req = time.time()-time_start

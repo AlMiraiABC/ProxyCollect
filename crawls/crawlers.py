@@ -64,18 +64,18 @@ async def kuaidaili(page_start: int = 1, page_end: int = 1, headers={}, timeout:
                                 verify = Verify[result[2]]
                                 address = result[3]
                                 port = int(result[1])
-                            except Exception as e:
+                            except:
                                 logger.error(
-                                    f"Cannot convert {result} when get {url}, occured {e}.")
+                                    f"Cannot convert {result} when get {url}.", exc_info=True)
                                 continue
                             else:
                                 proxy = Proxy(
                                     protocol, ip, port, verify, anonymous, True, address)
                                 proxies.append(proxy)
-                except Exception as ex:
+                except:
                     fails.append(url)
                     logger.error(
-                        f"Occured errors when get {url}. {ex}")
+                        f"Occured errors when get {url}", exc_info=True)
                 else:
                     succs.append(url)
                 await asyncio.sleep(random.uniform(1.5, 5.0))  # sleep
@@ -136,15 +136,15 @@ async def nimadaili(page_start: int = 1, page_end: int = 1, headers={}, timeout:
                         for result in results:
                             try:
                                 ps = to_proxy(result)
-                            except Exception as e:
+                            except:
                                 logger.error(
-                                    f'Cannot convert {result} when get {url}. {e}')
+                                    f'Cannot convert {result} when get {url}.', exc_info=True)
                             else:
                                 proxies.extend(ps)
-                except Exception as ex:
+                except:
                     fails.append(url)
                     logger.error(
-                        f"Occured errors when get {url}. {ex}")
+                        f"Occured errors when get {url}.", exc_info=True)
                 else:
                     succs.append(url)
                 asyncio.sleep(random.uniform(1.5, 5.0))  # sleep
