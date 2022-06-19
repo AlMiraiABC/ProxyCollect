@@ -2,6 +2,7 @@ from typing import Dict, TypedDict
 
 from util.config_util import ConfigUtil
 from util.ip import PublicIP
+from al_utils.async_util import run_async
 
 
 class RDBConfig:
@@ -57,7 +58,7 @@ class ValidConfig:
     def get(k: str, d: any):
         return ConfigUtil().get_key(f'valid.{k}', f'_VALID_{k.upper()}', d)
 
-    PUBLIC_IP: str = get('pubip', PublicIP.public_ip())
+    PUBLIC_IP: str = get('pubip', run_async(PublicIP.public_ip()))
     """Public ip address of host."""
     TIMEOUT: float = float(get('timeout', 5))
     """Time seconds to wait for connection."""
