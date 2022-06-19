@@ -19,7 +19,7 @@ class ConfigUtil(Singleton):
 
     def get_key(self, key: str, env_key: str = None, default=None):
         """
-        Get value of from config.
+        Get value from config.
 
         :param key: The key. Format as a.b.c.d
         :param env_key: The system environment key.
