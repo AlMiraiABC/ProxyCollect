@@ -62,6 +62,21 @@ class TBProxy(_TBBaseClass, Base, StoredProxy):
                          server_default=func.now(), onupdate=func.now())
     score = Column("score", Integer, server_default=text('20'), nullable=False)
 
+    def __repr__(self) -> str:
+        return (f"<{self.__class__.__name__}>"
+                f"{{id: {self.id}, "
+                f"protocol: {self.protocol}, "
+                f"ip: {self.ip}, "
+                f"port: {self.port}, "
+                f"verify: {self.verify}, "
+                f"anonymous: {self.anonymous}, "
+                f"score: {self.score}, "
+                f"domestic: {self.domestic}, "
+                f"address: {self.address}, "
+                f"speed: {self.speed}, "
+                f"verify_time: {self.verify_time}, "
+                f"}}")
+
 
 class _TBIdName(_TBBaseClass):
     name = Column("name", String, nullable=False, unique=True)

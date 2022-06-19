@@ -12,8 +12,9 @@ logger = Logger(__file__).logger
 service = CrawlService()
 
 
-async def run(conf: list[CrawlsCrawlerConfig], sem:int) -> tuple[int, int, int]:
+async def run(conf: list[CrawlsCrawlerConfig], sem: int = 10) -> tuple[int, int, int]:
     inserted, exist, failed = 0, 0, 0
+    sem = sem if sem and sem > 0 else 10
     async with asyncio.Semaphore(sem):
         for crawler in conf:
             logger.info(f'Start crawling {crawler}')
@@ -64,7 +65,7 @@ def main(argv: list):
             help()
         if opt in ['-c', '--config']:
             cf = arg
-        if opt in ['-s','--semaphore']:
+        if opt in ['-s', '--semaphore']:
             sem = int(arg)
     ConfigUtil(cf)  # Init once. Singleton.
     logger.info('Starting crawl...')

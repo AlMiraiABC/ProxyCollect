@@ -1,23 +1,28 @@
 from unittest import IsolatedAsyncioTestCase
+
 from db.model import Anonymous, Protocol, Proxy, StoredProxy, Verify
-from sqlalchemy import delete
-from sqlalchemy.orm import Session
 from db.rdb.model import TBProxy
 from db.rdb.rdb_dbutil import RDBDbUtil
+from sqlalchemy import delete
+from sqlalchemy.orm import Session
+from util.config import RDBConfig
 
 
 class TestRDBDbUtil(IsolatedAsyncioTestCase):
-    async def asyncSetUp(self) -> None:
-        self.util = RDBDbUtil(echo=True)
-        return await super().asyncSetUp()
+    @classmethod
+    def setUpClass(cls):
+        cls.util = RDBDbUtil(RDBConfig.URL, echo=True)
 
-    def _delete(self, id: int):
-        try:
-            with self.util.Session() as session:
-                session.execute(delete(TBProxy).where(TBProxy.id == id))
-                session.commit()
-        except:
-            return
+    async def asyncSetUp(self) -> None:
+        self.truncate()
+
+    async def asyncTearDown(self) -> None:
+        self.truncate()
+
+    def truncate(self):
+        with self.util.Session() as session:
+            session.execute(f'TRUNCATE TABLE {TBProxy.__tablename__};')
+            session.commit()
 
     def _insert(self, session: Session, instance: TBProxy):
         session.add(instance)
@@ -25,26 +30,19 @@ class TestRDBDbUtil(IsolatedAsyncioTestCase):
         return instance
 
     async def test_try_insert(self):
-        try:
-            proxy = Proxy(Protocol.HTTP, '127.0.0.1', '3336',
-                          Verify.HTTP, Anonymous.HIGH)
-            inserted = await self.util.try_insert(proxy)
-            self.assertIsNotNone(inserted)
-        finally:
-            self._delete(inserted.id)
+        proxy = Proxy(Protocol.HTTP, '127.0.0.1', '3336',
+                      Verify.HTTP, Anonymous.HIGH)
+        inserted = await self.util.try_insert(proxy)
+        self.assertIsNotNone(inserted)
 
     async def test_try_insert_exist(self):
         ks = {"protocol": Protocol.HTTP, "ip": '127.0.0.1', "port": 3336,
               "verify": Verify.HTTP, "anonymous": Anonymous.HIGH}
         proxy = Proxy(**ks)
-        session = self.util.Session()
-        try:
-            inserted = self._insert(session, TBProxy(**ks))
+        with self.util.Session() as session:
+            self._insert(session, TBProxy(**ks))
             existed = await self.util.try_insert(proxy)
             self.assertIsNone(existed)
-        finally:
-            self._delete(inserted.id)
-            session.close()
 
     async def test__update(self):
         NS = 0.85
@@ -55,17 +53,13 @@ class TestRDBDbUtil(IsolatedAsyncioTestCase):
             i.speed = NS
             return i
         instance = TBProxy(**ks)
-        try:
-            with self.util.Session() as session:
-                inserted = self._insert(session, instance)
-                proxy = StoredProxy(inserted.id, **ks, score=100)  # {id, ...}
-            proxy = self.util._update(proxy, cb)
-            self.assertEqual(proxy.speed, NS)
-        finally:
-            self._delete(inserted.id)
+        with self.util.Session() as session:
+            inserted = self._insert(session, instance)
+            proxy = StoredProxy(inserted.id, **ks, score=100)  # {id, ...}
+        proxy = await self.util._update(proxy, cb)
+        self.assertEqual(proxy.speed, NS)
 
     async def test_gets(self):
-        session = self.util.Session()
         ins = [
             TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.1', port=3306,
                     verify=Verify.HTTPS, anonymous=Anonymous.HIGH),
@@ -74,7 +68,7 @@ class TestRDBDbUtil(IsolatedAsyncioTestCase):
             TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.3', port=3306,
                     verify=Verify.UDP, anonymous=Anonymous.HIGH)
         ]
-        try:
+        with self.util.Session() as session:
             session.add_all(ins)
             session.commit()
             # SELECT...
@@ -84,13 +78,8 @@ class TestRDBDbUtil(IsolatedAsyncioTestCase):
             gets = await self.util.gets(protocol=Protocol.HTTPS, verify=Verify.HTTPS)
             self.assertSetEqual(
                 set([ins[0].id, ins[1].id]), set([p.id for p in gets]))
-        finally:
-            [session.delete(i) for i in ins]
-            session.commit()
-            session.close()
 
     async def test_count(self):
-        session = self.util.Session()
         ins = [
             TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.1', port=3306,
                     verify=Verify.HTTPS, anonymous=Anonymous.HIGH),
@@ -99,7 +88,7 @@ class TestRDBDbUtil(IsolatedAsyncioTestCase):
             TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.3', port=3306,
                     verify=Verify.UDP, anonymous=Anonymous.HIGH)
         ]
-        try:
+        with self.util.Session() as session:
             session.add_all(ins)
             session.commit()
             # SELECT count(*) AS count_1
@@ -110,13 +99,8 @@ class TestRDBDbUtil(IsolatedAsyncioTestCase):
             #   )AS anon_1
             count = await self.util.count(protocol=Protocol.HTTPS, verify=Verify.HTTPS)
             self.assertEqual(count, 2)
-        finally:
-            [session.delete(i) for i in ins]
-            session.commit()
-            session.close()
 
     async def test_gets_random(self):
-        session = self.util.Session()
         ins = [
             TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.1', port=3306,
                     verify=Verify.HTTPS, anonymous=Anonymous.HIGH),
@@ -125,7 +109,7 @@ class TestRDBDbUtil(IsolatedAsyncioTestCase):
             TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.3', port=3306,
                     verify=Verify.UDP, anonymous=Anonymous.HIGH)
         ]
-        try:
+        with self.util.Session() as session:
             session.add_all(ins)
             session.commit()
             # SELECT...
@@ -136,7 +120,3 @@ class TestRDBDbUtil(IsolatedAsyncioTestCase):
             proxies = await self.util.gets_random(protocol=Protocol.HTTPS, verify=Verify.HTTPS, limit=2)
             self.assertTrue(set([p.id for p in ins]) >
                             set([p.id for p in proxies]))
-        finally:
-            [session.delete(i) for i in ins]
-            session.commit()
-            session.close()

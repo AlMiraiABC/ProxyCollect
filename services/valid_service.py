@@ -8,6 +8,7 @@ from aiohttp import ClientSession
 from al_utils.logger import Logger
 from db.dbutil import DbUtil
 from db.model import StoredProxy
+from util.config import ValidConfig
 from util.valid import Valid
 
 logger = Logger(__file__).logger
@@ -23,7 +24,7 @@ class ValidService:
         `-1`: finished.
         """
         self._db = DbUtil()
-        self._valid = Valid()
+        self._valid = Valid(ValidConfig.PUBLIC_IP, ValidConfig.TIMEOUT)
         self._stop = Event()
         self._queue: Queue[StoredProxy] = Queue(patch*1.2)
 
