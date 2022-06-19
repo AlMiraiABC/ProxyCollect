@@ -1,12 +1,17 @@
 from typing import Awaitable, Callable
 
+from al_utils.logger import Logger
 from crawls.crawlers import CRAW_RET
+from db.dbutil import DbUtil
+from db.model import Proxy
 from util.implib import import_function
+
+logger = Logger(__file__).logger
 
 
 class CrawlService:
     def __init__(self):
-        pass
+        self._db = DbUtil()
 
     def get_crawler(self, crawler: str | Callable) -> Callable:
         """
@@ -37,3 +42,25 @@ class CrawlService:
         if crawler is None:
             raise ImportError(f'Crawler {crawler} not found.')
         return await crawler(*args, **kwargs)
+
+    async def save(self, proxies: list[Proxy]) -> tuple[list[Proxy], list[Proxy], list[Proxy]]:
+        """
+        Save proxies to db.
+
+        :return: (inserted, exist, failed)
+        """
+        inserted: list[Proxy] = []
+        exist: list[Proxy] = []
+        failed: list[Proxy] = []
+        for proxy in proxies:
+            try:
+                i = self._db.try_insert(proxy)
+                if i:
+                    inserted.append(i)
+                else:
+                    exist.append(proxy)
+            except:
+                logger.warning(f'Failed to insert proxy {proxy}.',
+                               exc_info=True)
+                failed.append(proxy)
+        return inserted, exist, failed

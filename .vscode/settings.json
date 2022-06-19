@@ -13,7 +13,8 @@
         "test",
         "util",
         "crawl",
-        "services"
+        "services",
+        "command"
     ],
     "python.envFile": "${workspaceFolder}/.env"
 }
