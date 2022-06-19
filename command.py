@@ -3,15 +3,17 @@ from getopt import GetoptError, getopt
 
 from commands.crawl import main as crawl_main
 
-
-def help():
-    """Print help message."""
-    print("""Proxy Collect 2.0 https://github.com/AlMiraiABC/ProxyCollect
+HELP = """Proxy Collect 2.0 https://github.com/AlMiraiABC/ProxyCollect
 ARG:
     c, crawl    Crawl proxies.
     v, valid    Valid proxies.
 PARAM:
-    -h, --help  Help.""")
+    -h, --help  Help."""
+
+
+def help():
+    """Print help message."""
+    print(HELP)
     exit(0)
 
 

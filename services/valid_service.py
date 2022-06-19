@@ -32,8 +32,10 @@ class ValidService:
         proxies = await self._db.gets(limit=self.patch, offset=self._cursor)
         if not proxies:
             self._cursor = -1
+            logger.debug(f'No more proxies.')
         else:
             self._cursor += len(proxies)
+            logger.debug(f'Get {len(proxies)} proxies from {self._cursor}.')
         return proxies
 
     async def update(self, session: ClientSession, proxy: StoredProxy):
@@ -56,12 +58,15 @@ class ValidService:
 
         Updated proxy will put in `rqueue`.
         """
+        logger.debug("Start valid proxies.")
         updated: list[StoredProxy] = []
         async with ClientSession() as session:
             async with asyncio.Semaphore(self.semaphore):
                 while not self._queue.empty() and not self._stop.is_set():
                     proxy = await self._queue.get()
                     updated.append(await self.update(session, proxy))
+        logger.debug(f"Valid proxies finished. "
+                     f"Updated {len(updated)} proxies.")
         return updated
 
     async def run_patch(self):
@@ -71,8 +76,11 @@ class ValidService:
         :return: Updated proxies. The item will be None if update it failed.
         """
         proxies = await self.get_patch()
+        b = self._queue.qsize()
         for proxy in proxies:
             await self._queue.put(proxy)
+        logger.debug(
+            f'Put {len(proxies)} proxies from {b} to {self._queue.qsize()}.')
         return self.valid_proxies()
 
     async def run(self, patch_cb: Callable[[list[StoredProxy]], None] = None):

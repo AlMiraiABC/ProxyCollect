@@ -41,6 +41,7 @@ class CrawlService:
         crawler = self.get_crawler(crawler)
         if crawler is None:
             raise ImportError(f'Crawler {crawler} not found.')
+        logger.debug(f'Running crawler {crawler}.')
         return await crawler(*args, **kwargs)
 
     async def save(self, proxies: list[Proxy]) -> tuple[list[Proxy], list[Proxy], list[Proxy]]:
@@ -63,4 +64,7 @@ class CrawlService:
                 logger.warning(f'Failed to insert proxy {proxy}.',
                                exc_info=True)
                 failed.append(proxy)
+        logger.debug(f'Inserted {len(inserted)} proxies, '
+                     f'updated {len(exist)}, '
+                     f'failed {len(failed)}.')
         return inserted, exist, failed

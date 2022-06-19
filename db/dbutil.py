@@ -1,5 +1,6 @@
 from typing import Callable
 
+from al_utils.logger import Logger
 from al_utils.meta import merge_meta
 from al_utils.singleton import Singleton
 from util.config import DBConfig, RDBConfig
@@ -7,6 +8,8 @@ from util.config import DBConfig, RDBConfig
 from db.base_dbutil import BaseDbUtil
 from db.model import Anonymous, Protocol, Proxy, StoredProxy, Verify
 from db.rdb.rdb_dbutil import RDBDbUtil
+
+logger = Logger(__file__).logger
 
 
 class DbUtil(merge_meta(BaseDbUtil, Singleton)):
@@ -42,8 +45,10 @@ class DbUtil(merge_meta(BaseDbUtil, Singleton)):
                     verify = Verify.TCP
                 case Protocol.SOCKS5:
                     verify = Verify.UDP
+            logger.debug(f"set verify to {verify}")
         if not proxy.anonymous:
             proxy.anonymous = Anonymous.TRANSPARENT
+            logger.debug(f"set anonymous to {proxy.anonymous}")
         proxy.verify = verify
         return await self.db.try_insert(proxy)
 
@@ -79,10 +84,12 @@ class DbUtil(merge_meta(BaseDbUtil, Singleton)):
 
     async def gets(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
                    limit: int = 100, offset: int = 0) -> list[StoredProxy]:
-        if not limit or limit < 0:
+        if not limit or limit <= 0:
             limit = 100
+            logger.debug(f"set limit to {limit}")
         if not offset or offset < 0:
             offset = 0
+            logger.debug(f"set offset to {offset}")
         return await self.db.gets(protocol, ip, port, verify, anonymous, domestic, limit, offset)
 
     async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None) -> int:
@@ -92,4 +99,5 @@ class DbUtil(merge_meta(BaseDbUtil, Singleton)):
                           limit: int = 100) -> list[StoredProxy]:
         if not limit or limit < 0:
             limit = 100
+            logger.debug(f"set limit to {limit}")
         return await self.db.gets_random(protocol, ip, port, verify, anonymous, domestic, limit)

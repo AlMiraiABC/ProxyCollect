@@ -33,9 +33,11 @@ class RDBDbUtil(BaseDbUtil):
             instance = self.dao.get_by_id(session, proxy.id)
             if not instance:
                 return None
+            logger.debug(f'updating {instance.id} {instance}.')
             instance = cb(instance)
             updated = self.dao.insert_or_update(
                 session, instance)  # cannot be none
+            logger.debug(f'updated {updated.id} to {updated}.')
             session.commit()
             return self.to_storedproxy(updated)
 
@@ -59,8 +61,12 @@ class RDBDbUtil(BaseDbUtil):
 
     async def gets(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
                    limit: int = 100, offset: int = 0) -> list[StoredProxy]:
-        limit = limit if limit and limit >= 0 else 100
-        offset = offset if offset and offset >= 0 else 0
+        if not limit or limit <= 0:
+            logger.debug(f'set limit from {limit} to {100}.')
+            limit = 100
+        if not offset or offset < 0:
+            logger.debug(f'set offset from {offset} to {0}.')
+            offset = 0
         with self.Session() as session:
             query = self._gen_query(session, protocol, ip, port,
                                     verify, anonymous, domestic)
@@ -134,8 +140,10 @@ class _RDBDAO:
         """
         inserted = self.get(session, instance)
         if inserted:
+            logger.debug(f'Proxy already exists {inserted.id}.')
             return None
         session.add(instance)
+        logger.debug(f'Insert proxy {instance}.')
         return instance
 
     def get(self, session: Session, instance: TBProxy) -> TBProxy | None:
@@ -152,8 +160,11 @@ class _RDBDAO:
     def update(self, session: Session, instance: TBProxy) -> TBProxy | None:
         """Update proxy if exists."""
         if not self.get(session, instance):
+            logger.debug(f'Proxy not exists {instance}.')
             return None
+        logger.debug(f'Update proxy {instance}.')
         session.add(instance)
+        logger.debug(f'Update proxy to {instance}.')
         return instance
 
     def insert_or_update(self, session: Session, instance: TBProxy) -> TBProxy | None:
@@ -171,6 +182,7 @@ class _RDBDAO:
         if not instance:
             return None
         session.delete(instance)
+        logger.debug(f'Delete proxy {instance}.')
 
     def delete_by_id(self, session: Session, id: int):
         if id < 0:
@@ -178,3 +190,6 @@ class _RDBDAO:
         inserted = session.get(id)
         if inserted:
             session.delete(inserted)
+            logger.debug(f'Delete proxy {inserted}.')
+            return
+        logger.debug(f'Proxy not exists {id}.')
