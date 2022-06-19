@@ -1,6 +1,5 @@
 import json
 import os
-from copy import deepcopy
 
 from al_utils.singleton import Singleton
 

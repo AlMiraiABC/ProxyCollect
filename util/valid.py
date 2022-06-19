@@ -7,7 +7,6 @@ import time
 import requests
 from aiohttp import ClientSession
 from al_utils.logger import Logger
-from config import ValidConfig
 from db.model import Anonymous, Proxy
 
 logger = Logger(__file__).logger
@@ -16,9 +15,9 @@ logger = Logger(__file__).logger
 class Valid:
     """Utils to check proxies availability."""
 
-    def __init__(self, public_ip: str = ValidConfig.PUBLIC_IP, timeout: float = ValidConfig.TIMEOUT):
-        self.public_ip = public_ip or ValidConfig.PUBLIC_IP
-        self.timeout = timeout or ValidConfig.TIMEOUT
+    def __init__(self, public_ip: str, timeout: float):
+        self.public_ip = public_ip
+        self.timeout = timeout
 
     def _check_anonymous(self, proxy: Proxy, content: str) -> Anonymous:
         """Check anonymous type. Whether real ip or proxy ip in :param:`content`"""
