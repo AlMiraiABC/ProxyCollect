@@ -1,19 +1,34 @@
 import asyncio
 import sys
 from getopt import GetoptError, getopt
+from typing import Callable
 
 from al_utils.console import ColoredConsole
 from al_utils.logger import Logger
-from util.config import CrawlsConfig, CrawlsCrawlerConfig
+from prettytable import PrettyTable
 from services.crawl_service import CrawlService
+from util.config import CrawlsConfig, CrawlsCrawlerConfig
 from util.config_util import ConfigUtil
 
 logger = Logger(__file__).logger
 service = CrawlService()
 
 
-async def run(conf: list[CrawlsCrawlerConfig], sem: int = 10) -> tuple[int, int, int]:
-    inserted, exist, failed = 0, 0, 0
+async def run(conf: list[CrawlsCrawlerConfig], sem: int = 10, cb: Callable[[dict], None] = None) -> list[dict]:
+    """
+    :return: [
+        {
+            'crawler': Config of crawler,
+            'susurl': Request successed urls,
+            'failurl': Request failed urls,
+            'count': Total crawled proxies,
+            'insert': Count of successfully inserted proxies,
+            'exist': Count of exist proxies, skip to insert,
+            'failed': Count of proxies failed to insert,
+        }
+    ]
+    """
+    ret: list[dict] = []
     sem = sem if sem and sem > 0 else 10
     for crawler in conf:
         logger.info(f'Start crawling {crawler}')
@@ -25,20 +40,22 @@ async def run(conf: list[CrawlsCrawlerConfig], sem: int = 10) -> tuple[int, int,
             continue
         try:
             async with asyncio.Semaphore(sem):
-                proxies = await service.run(crawler['callable'], *crawler.get('args', ()), **crawler.get('kwargs', {}))
+                proxies, sus, fus = await service.run(crawler['callable'], *crawler.get('args', ()), **crawler.get('kwargs', {}))
         except:
             logger.error(f'Crawl {crawler} failed.', exc_info=True)
             ColoredConsole.error(f'Crawl {crawler} failed.')
             continue
         i, e, f = await service.save(proxies)
-        inserted += len(i)
-        exist += len(e)
-        failed += len(f)
         logger.info(
-            f'{crawler["callable"]} inserted: {len(i)}, exist: {len(e)}, failed: {len(f)}')
-        ColoredConsole.success(
-            f'{crawler["callable"]} inserted {len(i)} proxies({len(e)} exist and {len(f)} failed.).')
-    return inserted, exist, failed
+            f'{crawler["callable"]} page suc: {len(sus)}, fail: {len(fus)}'
+            f'count: {len(proxies)} inserted: {len(i)}, exist: {len(e)}, failed: {len(f)}')
+        res = {"crawler": crawler, "susurl": sus, "failurl": fus,
+               "count": len(proxies), "insert": len(i),
+               "exist": len(e), "fail": len(f)}
+        if cb:
+            cb(res)
+        ret.append(res)
+    return ret
 
 
 def help():
@@ -52,9 +69,47 @@ def help():
     exit(0)
 
 
+def _cb(res: dict):
+    """Callback of each crawler after run."""
+    ColoredConsole.info(f'Finished {res["crawler"]["callable"]}.')
+    if res["susurl"]:
+        ColoredConsole.success(f'Success {len(res["susurl"])} pages. ')
+    if res["failurl"]:
+        ColoredConsole.error(f'Failed {len(res["failurl"])} pages.')
+        for f in res['failurl']:
+            ColoredConsole.debug(f)
+    ColoredConsole.debug(f'Got {res["count"]} proxies.')
+    if res["insert"]:
+        ColoredConsole.success(f'Insert {res["insert"]} proxies.')
+    if res["exist"]:
+        ColoredConsole.debug(f'Exist {res["exist"]} proxies.')
+    if res["fail"]:
+        ColoredConsole.error(f'Fail {res["fail"]} proxies')
+
+
+def statistics(res: list[dict]):
+    tb = PrettyTable()
+    tb.field_names = ['row', 'crawler', 'susurl', 'failurl',
+                      'count', 'insert', 'exist', 'fail']
+    csu, cfu, cc, ci, ce, cf = 0, 0, 0, 0, 0, 0
+    for index, r in enumerate(res):
+        tb.add_row([index+1, r['crawler']['callable'], len(r['susurl']), len(r['failurl']),
+                    r['count'], r['insert'], r['exist'], r['fail']])
+        csu += len(r['susurl'])
+        cfu += len(r['failurl'])
+        cc += r['count']
+        ci += r['insert']
+        ce += r['exist']
+        cf += r['fail']
+    tb.add_row(['Total', len(res), csu, cfu, cc, ci, ce, cf])
+    tb.align = 'r'
+    tb.align['crawler'] = 'l'
+    return tb
+
+
 def main(argv: list):
     cf = 'config.json'
-    sem = CrawlsConfig.SEMEPHORE
+    sem = CrawlsConfig.SEMAPHORE
     try:
         opts, _ = getopt(argv, "hcs:", ["help", "config=", "semaphore="])
     except GetoptError:
@@ -69,11 +124,9 @@ def main(argv: list):
             sem = int(arg)
     ConfigUtil(cf)  # Init once. Singleton.
     logger.info('Starting crawl...')
-    i, e, f = asyncio.run(run(CrawlsConfig.CRAWLERS, sem))
-    logger.info(f'Crawl finished. Inserted: {i}, exist: {e}, failed: {f}')
-    ColoredConsole.success(f'Insert {i} proxies.')
-    ColoredConsole.warn(f'Exist {e} proxies.', emoji='📀 ')
-    ColoredConsole.error(f'Failed {f} proxies.')
+    ret = asyncio.run(run(CrawlsConfig.CRAWLERS, sem, _cb))
+    logger.info('Crawl finished.')
+    print(statistics(ret))
 
 
 if __name__ == '__main__':
