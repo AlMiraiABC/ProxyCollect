@@ -3,3 +3,4 @@ al-utils-almirai
 pymysql
 requests
 sqlalchemy
+prettytable
