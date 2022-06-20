@@ -11,7 +11,7 @@ async def mock_ret(v=None):
 
 @patch.object(CrawlService, '__init__', lambda *_, **__: None)
 class TestCrawl(IsolatedAsyncioTestCase):
-    @patch.object(CrawlService, 'run', lambda *_, **__: mock_ret([]))
+    @patch.object(CrawlService, 'run', lambda *_, **__: mock_ret(([1]*3, [2]*2, [3]*1)))
     @patch.object(CrawlService, 'save', lambda *_, **__: mock_ret(([1]*3, [1]*2, [1]*1)))
     async def test_run(self):
         CONF = [
@@ -25,14 +25,17 @@ class TestCrawl(IsolatedAsyncioTestCase):
                 'callable': 'c3',
             }
         ]
-        inserted, exist, failed = await run(CONF)
-        self.assertEqual(inserted, 3*len(CONF))
-        self.assertEqual(exist, 2*len(CONF))
-        self.assertEqual(failed, 1*len(CONF))
+        ret = await run(CONF)
+        self.assertEqual(len(ret), len(CONF))
+        ret0 = ret[0]
+        self.assertEqual(ret0['susurl'], [2]*2)
+        self.assertEqual(ret0['failurl'], [3]*1)
+        self.assertEqual(ret0['count'], len([1]*3))
+        self.assertEqual(ret0['insert'], len([1]*3))
+        self.assertEqual(ret0['exist'], len([1]*2))
+        self.assertEqual(ret0['fail'], len([1]*1))
 
     async def test_run_keyerr(self):
         CONF = [{}]
-        inserted, exist, failed = await run(CONF)
-        self.assertEqual(inserted, 0)
-        self.assertEqual(exist, 0)
-        self.assertEqual(failed, 0)
+        ret = await run(CONF)
+        self.assertListEqual(ret, [])
