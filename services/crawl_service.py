@@ -55,7 +55,7 @@ class CrawlService:
         failed: list[Proxy] = []
         for proxy in proxies:
             try:
-                i = self._db.try_insert(proxy)
+                i = await self._db.try_insert(proxy)
                 if i:
                     inserted.append(i)
                 else:
