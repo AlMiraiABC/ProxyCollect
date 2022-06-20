@@ -45,11 +45,11 @@ class DbUtil(merge_meta(BaseDbUtil, Singleton)):
                     verify = Verify.TCP
                 case Protocol.SOCKS5:
                     verify = Verify.UDP
+            proxy.verify = verify
             logger.debug(f"set verify to {verify}")
         if not proxy.anonymous:
             proxy.anonymous = Anonymous.TRANSPARENT
             logger.debug(f"set anonymous to {proxy.anonymous}")
-        proxy.verify = verify
         return await self.db.try_insert(proxy)
 
     async def _update(self, proxy: StoredProxy, cb: Callable[[StoredProxy], StoredProxy]) -> StoredProxy | None:
