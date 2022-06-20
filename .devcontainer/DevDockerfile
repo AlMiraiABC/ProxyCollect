@@ -4,6 +4,7 @@ USER root
 ENV PATH /home/appuser/.local/bin:$PATH
 RUN apk add --no-cache --update musl-dev gcc libffi-dev curl && \
     python -m pip install --no-cache-dir -U -i https://pypi.tuna.tsinghua.edu.cn/simple pip && \
+    pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt && \
     pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.dev.txt && \
     curl -s -o /usr/local/bin/codecov https://uploader.codecov.io/latest/linux/codecov && chmod +x /usr/local/bin/codecov
 USER appuser

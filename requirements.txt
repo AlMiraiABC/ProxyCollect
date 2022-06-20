@@ -4,3 +4,4 @@ pymysql
 requests
 sqlalchemy
 prettytable
+aiohttp-socks
