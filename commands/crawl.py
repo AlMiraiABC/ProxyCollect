@@ -15,29 +15,29 @@ service = CrawlService()
 async def run(conf: list[CrawlsCrawlerConfig], sem: int = 10) -> tuple[int, int, int]:
     inserted, exist, failed = 0, 0, 0
     sem = sem if sem and sem > 0 else 10
-    async with asyncio.Semaphore(sem):
-        for crawler in conf:
-            logger.info(f'Start crawling {crawler}')
-            if not crawler.get('callable'):
-                logger.error(
-                    f"Crawler's config {crawler} must have `callable` key.")
-                ColoredConsole.error(
-                    f"Crawler's config {crawler} must have `callable` key. Skip it.")
-                continue
-            try:
+    for crawler in conf:
+        logger.info(f'Start crawling {crawler}')
+        if not crawler.get('callable'):
+            logger.error(
+                f"Crawler's config {crawler} must have `callable` key.")
+            ColoredConsole.error(
+                f"Crawler's config {crawler} must have `callable` key. Skip it.")
+            continue
+        try:
+            async with asyncio.Semaphore(sem):
                 proxies = await service.run(crawler['callable'], *crawler.get('args', ()), **crawler.get('kwargs', {}))
-            except:
-                logger.error(f'Crawl {crawler} failed.', exc_info=True)
-                ColoredConsole.error(f'Crawl {crawler} failed.')
-                continue
-            i, e, f = await service.save(proxies)
-            inserted += len(i)
-            exist += len(e)
-            failed += len(f)
-            logger.info(
-                f'{crawler["callable"]} inserted: {len(i)}, exist: {len(e)}, failed: {len(f)}')
-            ColoredConsole.success(
-                f'{crawler["callable"]} inserted {len(i)} proxies({len(e)} exist and {len(f)} failed.).')
+        except:
+            logger.error(f'Crawl {crawler} failed.', exc_info=True)
+            ColoredConsole.error(f'Crawl {crawler} failed.')
+            continue
+        i, e, f = await service.save(proxies)
+        inserted += len(i)
+        exist += len(e)
+        failed += len(f)
+        logger.info(
+            f'{crawler["callable"]} inserted: {len(i)}, exist: {len(e)}, failed: {len(f)}')
+        ColoredConsole.success(
+            f'{crawler["callable"]} inserted {len(i)} proxies({len(e)} exist and {len(f)} failed.).')
     return inserted, exist, failed
 
 
