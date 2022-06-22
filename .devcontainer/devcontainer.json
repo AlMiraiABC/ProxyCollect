@@ -44,7 +44,7 @@
 	// "forwardPorts": [],
 
 	// Uncomment the next line to run commands after the container is created - for example installing curl.
-	"postCreateCommand": "pip install -i https://pypi.tuna.tsinghua.edu.cn/simple autopep8 coverage",
+	// "postCreateCommand": "",
 
 	// Uncomment when using a ptrace-based debugger like C++, Go, and Rust
 	"runArgs": [ "--env-file", ".env" ],
@@ -53,5 +53,5 @@
 	// "mounts": [ "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind" ],
 
 	// Uncomment to connect as a non-root user if you've added one. See https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "appuser"
+	"remoteUser": "root"
 }
