@@ -57,16 +57,18 @@ async def run(conf: list[CrawlsCrawlerConfig], sem: int = 10, cb: Callable[[dict
         ret.append(res)
     return ret
 
+HELP = """PARAM:
+-h, --help                  Help.
+-c, --config                Config file path.
+                            Default is `config.json`.
+-s, --semaphore <semaphore> The maximum number of concurrent.
+                            Default is 10."""
 
-def help():
-    """Print help message."""
-    print("""PARAM:
-    -h, --help      Help.
-    -c, --config    Config file path.
-                    Default is `config.json`.
-    -s, --semaphore The maximum number of concurrent.
-                    Default is 10.""")
-    exit(0)
+
+def help(c=0):
+    """Print help message then exit."""
+    print(HELP)
+    exit(c)
 
 
 def _cb(res: dict):
@@ -111,10 +113,9 @@ def main(argv: list):
     cf = 'config.json'
     sem = CrawlsConfig.SEMAPHORE
     try:
-        opts, _ = getopt(argv, "hcs:", ["help", "config=", "semaphore="])
+        opts, _ = getopt(argv, "hc:s:", ["help", "config=", "semaphore="])
     except GetoptError:
-        print('test.py -i <inputfile> -o <outputfile>')
-        exit(1)
+        help(1)
     for opt, arg in opts:
         if opt in ['-h', '--help']:
             help()

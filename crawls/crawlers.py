@@ -9,11 +9,13 @@
 import asyncio
 import random
 import re
-from asyncio import Semaphore
 
 from aiohttp import ClientSession
 from al_utils.logger import Logger
 from db.model import Anonymous, Protocol, Proxy, Verify
+from util.converter import to_aiohttp_proxy
+
+from crawls.helper import get_one_proxy
 
 logger = Logger(__file__).logger
 
@@ -40,12 +42,13 @@ async def kuaidaili(page_start: int = 1, page_end: int = 1, headers={}, timeout:
     proxies: list[Proxy] = []
     succs: list[str] = []
     fails: list[str] = []
+    _p = to_aiohttp_proxy(get_one_proxy(Protocol.HTTP))
     async with ClientSession() as session:
         for baseurl, anonymous in urls:
             for page in range(page_start, page_end + 1):
                 url = f'{baseurl}{page}/'
                 try:
-                    async with session.get(url=url, headers=headers, timeout=timeout, **kwargs) as resp:
+                    async with session.get(url=url, headers=headers, timeout=timeout, proxy=_p, **kwargs) as resp:
                         if resp.status != 200:
                             raise ConnectionError(f'Cannot get {url}, '
                                                   f'got status {resp.status}.')
@@ -114,12 +117,13 @@ async def nimadaili(page_start: int = 1, page_end: int = 1, headers={}, timeout:
     proxies: list[Proxy] = []
     succs: list[str] = []
     fails: list[str] = []
+    _p = to_aiohttp_proxy(get_one_proxy(Protocol.HTTP))
     async with ClientSession() as session:
         for baseurl in urls:
             for page in range(page_start, page_end + 1):
                 url = f'{baseurl}{page}/'
                 try:
-                    async with session.get(url, headers=headers, timeout=timeout, **kwargs) as resp:
+                    async with session.get(url, headers=headers, timeout=timeout, proxy=_p, **kwargs) as resp:
                         if resp.status != 200:
                             raise ConnectionError(f'Cannot get {url}, '
                                                   f'got status {resp.status}.')
