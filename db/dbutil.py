@@ -56,7 +56,7 @@ class DbUtil(merge_meta(BaseDbUtil, Singleton)):
         if not proxy.id:
             raise ValueError(f"id must be set, "
                              f"but got {proxy}")
-        return await self.db._update(proxy)
+        return await self.db._update(proxy, cb)
 
     async def increase_score(self, proxy: StoredProxy, step=1) -> StoredProxy | None:
         if not proxy.id:
