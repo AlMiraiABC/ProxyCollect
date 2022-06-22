@@ -2,6 +2,7 @@ import sys
 from getopt import GetoptError, getopt
 
 from commands.crawl import main as crawl_main
+from commands.valid import main as valid_main
 
 HELP = """Proxy Collect 2.0 https://github.com/AlMiraiABC/ProxyCollect
 ARG:
@@ -11,10 +12,10 @@ PARAM:
     -h, --help  Help."""
 
 
-def help():
+def help(c=0):
     """Print help message."""
     print(HELP)
-    exit(0)
+    exit(c)
 
 
 def main(argv: list[str]):
@@ -27,10 +28,14 @@ def main(argv: list[str]):
         if opt in ['-h', '--help']:
             help()
     if not args:
-        help()
+        help(1)
     match args[0]:
         case 'c' | 'crawl':
             crawl_main(args[1:])
+        case 'v' | 'valid':
+            valid_main(args[1:])
+        case _:
+            help(2)
 
 
 if __name__ == '__main__':

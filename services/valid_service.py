@@ -4,7 +4,6 @@ from asyncio import Queue
 from multiprocessing import Event
 from typing import Callable
 
-from aiohttp import ClientSession
 from al_utils.logger import Logger
 from db.dbutil import DbUtil
 from db.model import StoredProxy
@@ -39,9 +38,9 @@ class ValidService:
             logger.debug(f'Get {len(proxies)} proxies from {self._cursor}.')
         return proxies
 
-    async def update(self, session: ClientSession, proxy: StoredProxy):
+    async def update(self, proxy: StoredProxy):
         """Valid and update :param:`proxy`"""
-        speed, anonymous = await self._valid.async_req(proxy, session=session)
+        speed, anonymous = await self._valid.async_valid(proxy)
 
         def cb(i: StoredProxy):
             i.anonymous = anonymous
@@ -61,11 +60,10 @@ class ValidService:
         """
         logger.debug("Start valid proxies.")
         updated: list[StoredProxy] = []
-        async with ClientSession() as session:
-            async with asyncio.Semaphore(self.semaphore):
-                while not self._queue.empty() and not self._stop.is_set():
-                    proxy = await self._queue.get()
-                    updated.append(await self.update(session, proxy))
+        async with asyncio.Semaphore(self.semaphore):
+            while not self._queue.empty() and not self._stop.is_set():
+                proxy = await self._queue.get()
+                updated.append(await self.update(proxy))
         logger.debug(f"Valid proxies finished. "
                      f"Updated {len(updated)} proxies.")
         return updated
@@ -82,20 +80,21 @@ class ValidService:
             await self._queue.put(proxy)
         logger.debug(
             f'Put {len(proxies)} proxies from {b} to {self._queue.qsize()}.')
-        return self.valid_proxies()
+        return await self.valid_proxies()
 
-    async def run(self, patch_cb: Callable[[list[StoredProxy]], None] = None):
+    async def run(self, patch_cb: Callable[[list[StoredProxy | None], int, int, int], None] = None) -> list[tuple[int, int, int]]:
         """
         Start or continue to run valid service.
 
         Valid all proxies in one ioloop. This is IO bound tasks and multiprocessing will not
         imporve efficiency.
+
+        :param patch_cb: Callback when one patch epoch finished.
+                    `(patch_proxies, patch_count, failed_count, timeout_count) => None`
         """
-        patch_cb = patch_cb or (lambda *_: None)
         if self._cursor < 0:
             raise RuntimeError('Service already stopped.')
-        logger.info(f"Running valid service with {self.max_workers} workers.")
-        count, fails, timeouts = 0, 0, 0
+        ret = []
         self._stop.clear()
         while self._cursor >= 0 and not self._stop.is_set():
             logger.info(f"Get patch from {self._cursor}.")
@@ -107,11 +106,11 @@ class ValidService:
             logger.info(f"The The patch {self._cursor}-{self._cursor+self.patch} valid {c} proxies, "
                         f"{f} failed and"
                         f"{t} timed out.")
-            count += c
-            fails += f
-            timeouts += t
+            if patch_cb:
+                patch_cb(results, c, f, t)
+            ret.append((c, f, t))
         self._stop.set()
-        return count, fails, timeouts
+        return ret
 
     def _count(self, proxies: list[StoredProxy]):
         """
