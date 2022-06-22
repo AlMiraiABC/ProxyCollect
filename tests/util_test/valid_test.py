@@ -1,9 +1,6 @@
 import json
-import os
 from unittest import IsolatedAsyncioTestCase, skip
 from unittest.mock import patch
-import aiohttp
-from aiohttp_socks import ProxyConnector
 from aioresponses import aioresponses
 
 import requests
