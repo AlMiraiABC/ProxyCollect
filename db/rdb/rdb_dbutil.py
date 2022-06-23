@@ -90,6 +90,14 @@ class RDBDbUtil(BaseDbUtil):
                 func.random()).limit(limit).all()
             return [self.to_storedproxy(r) for r in results]
 
+    async def delete(self, proxy: StoredProxy):
+        if not proxy or not proxy.id:
+            return
+        with self.Session() as session:
+            self.dao.delete_by_id(session, proxy.id)
+            session.commit()
+
+
     def _gen_query(self, session: Session, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None):
         query = session.query(TBProxy)
         if protocol:
@@ -187,7 +195,7 @@ class _RDBDAO:
     def delete_by_id(self, session: Session, id: int):
         if id < 0:
             return
-        inserted = session.get(id)
+        inserted = session.get(TBProxy, id)
         if inserted:
             session.delete(inserted)
             logger.debug(f'Delete proxy {inserted}.')

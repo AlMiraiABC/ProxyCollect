@@ -81,3 +81,10 @@ class BaseDbUtil(ABC):
         Get random proxies by given conditions.
         """
         pass
+
+    @abstractmethod
+    async def delete(self, proxy: StoredProxy):
+        """
+        Delete this proxy.
+        """
+        pass

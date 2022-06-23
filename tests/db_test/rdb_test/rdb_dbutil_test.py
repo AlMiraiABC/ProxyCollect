@@ -3,7 +3,6 @@ from unittest import IsolatedAsyncioTestCase
 from db.model import Anonymous, Protocol, Proxy, StoredProxy, Verify
 from db.rdb.model import TBProxy
 from db.rdb.rdb_dbutil import RDBDbUtil
-from sqlalchemy import delete
 from sqlalchemy.orm import Session
 from util.config import RDBConfig
 
@@ -120,3 +119,23 @@ class TestRDBDbUtil(IsolatedAsyncioTestCase):
             proxies = await self.util.gets_random(protocol=Protocol.HTTPS, verify=Verify.HTTPS, limit=2)
             self.assertTrue(set([p.id for p in ins]) >
                             set([p.id for p in proxies]))
+
+    async def test_delete(self):
+        ins = TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.1', port=3306,
+                      verify=Verify.HTTPS, anonymous=Anonymous.HIGH)
+        with self.util.Session() as session:
+            inserted = self._insert(session, ins)
+            await self.util.delete(inserted)
+        with self.util.Session() as session: # creat enew session
+            q = session.get(TBProxy, inserted.id)
+            self.assertIsNone(q)
+
+    async def test_delete_unexist(self):
+        ins = TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.1', port=3306,
+                      verify=Verify.HTTPS, anonymous=Anonymous.HIGH)
+
+        with self.util.Session() as session:
+            inserted = self._insert(session, ins)
+            session.delete(inserted)
+            session.commit()
+            self.util.delete(inserted)

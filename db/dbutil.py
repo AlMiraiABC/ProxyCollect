@@ -101,3 +101,8 @@ class DbUtil(merge_meta(BaseDbUtil, Singleton)):
             limit = 100
             logger.debug(f"set limit to {limit}")
         return await self.db.gets_random(protocol, ip, port, verify, anonymous, domestic, limit)
+
+    async def delete(self, proxy:StoredProxy):
+        if not proxy:
+            return
+        return await self.db.delete(proxy)
