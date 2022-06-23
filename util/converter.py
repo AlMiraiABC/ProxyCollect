@@ -36,4 +36,24 @@ def to_url(proxy: Proxy):
 
     `<protocol>://<ip>:<port>`
     """
+    if not proxy:
+        return ''
     return f'{proxy.protocol.name.lower()}://{proxy.ip}:{proxy.port}'
+
+
+def to_dict(proxy: Proxy):
+    """
+    Convert proxy to k-v dict.
+    """
+    if not proxy:
+        return {}
+    return {
+        'protocol': proxy.protocol.name,
+        'ip': proxy.ip,
+        'port': proxy.port,
+        'verify': proxy.verify.name,
+        'anonymous': proxy.anonymous.name,
+        'domestic': proxy.domestic,
+        'address': proxy.address,
+        'speed': proxy.speed
+    }

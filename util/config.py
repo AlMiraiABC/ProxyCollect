@@ -97,7 +97,7 @@ class CrawlsConfig:
     """The maximum number of concurrent."""
 
 
-class APIConfig:
+class QueryConfig:
     def get(k: str, d: any):
         return ConfigUtil().get_key(f'api.{k}', f'_API_{k.upper()}', d)
 

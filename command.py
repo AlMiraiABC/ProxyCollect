@@ -3,6 +3,7 @@ from getopt import GetoptError, getopt
 
 from commands.crawl import main as crawl_main
 from commands.valid import main as valid_main
+from commands.query import main as query_main
 
 HELP = """Proxy Collect 2.0 https://github.com/AlMiraiABC/ProxyCollect
 ARG:
@@ -34,6 +35,8 @@ def main(argv: list[str]):
             crawl_main(args[1:])
         case 'v' | 'valid':
             valid_main(args[1:])
+        case 'q' | 'query':
+            query_main(args[1:])
         case _:
             help(2)
 
