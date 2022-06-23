@@ -24,7 +24,7 @@ HELP = """PARAM:
 -c, --config <file>     Configuration file path.
 -s, --schema <protocol> Protocol type.
     --protocol              http, https, socks4, socks5.
--h, --host <ip>         IP v4 address.
+-i, --host <ip>         IP v4 address.
     --ip
 -p, --port <port>       Port[0-65535].
 -v, --verify <verify>   Verify type.
@@ -119,7 +119,7 @@ class OutputType(Enum):
 
 def main(argv: list):
     try:
-        opts, _ = getopt(argv, "hc:s:h:p:v:a:d:n:k:q:o:x:",
+        opts, _ = getopt(argv, "hc:s:i:p:v:a:d:n:k:q:o:x:",
                          [
                              "help", "dome", "domestic",
                              "config=",
@@ -156,7 +156,7 @@ def main(argv: list):
                 cf = arg
             case '-s' | '--schema' | '--protocol':
                 protocol = to_enum(Protocol, arg)
-            case '-h' | '--ip' | '--host':
+            case '-i' | '--ip' | '--host':
                 if not is_formed_ipv4(arg):
                     print(f"Malformed ipv4 address {arg}.")
                     help(1)
