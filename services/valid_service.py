@@ -7,14 +7,13 @@ from typing import Callable
 from al_utils.logger import Logger
 from db.dbutil import DbUtil
 from db.model import StoredProxy
-from util.config import ValidConfig
 from util.valid import Valid
 
 logger = Logger(__file__).logger
 
 
 class ValidService:
-    def __init__(self, patch: int = 500, semaphore: int = 50):
+    def __init__(self, valid:Valid, patch: int = 500, semaphore: int = 50):
         self.patch = patch if patch >= 50 else 500
         self.semaphore = semaphore if semaphore > 10 else 50
         self._cursor: int = 0
@@ -23,7 +22,7 @@ class ValidService:
         `-1`: finished.
         """
         self._db = DbUtil()
-        self._valid = Valid(ValidConfig.PUBLIC_IP, ValidConfig.TIMEOUT)
+        self._valid = valid
         self._stop = Event()
         self._queue: Queue[StoredProxy] = Queue(patch*1.2)
 

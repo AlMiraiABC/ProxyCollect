@@ -8,10 +8,11 @@ from prettytable import PrettyTable
 from services.valid_service import ValidService
 from util.config import ValidConfig
 from util.config_util import ConfigUtil
+from util.ip import is_formed_ipv4
+from util.valid import Valid
 
 logger = Logger(__file__).logger
 
-service = ValidService()
 
 HELP = """PARAM:
 -h, --help                  Print help message.
@@ -21,10 +22,10 @@ HELP = """PARAM:
                             Default is 500."""
 
 
-def help():
+def help(c=0):
     """Print help message then exit."""
     print(HELP)
-    exit(0)
+    exit(c)
 
 
 def _cb(_, counts, fails, timeouts):
@@ -54,22 +55,40 @@ def main(argv: list[str]):
     sem = ValidConfig.SEMAPHORE
     patch = ValidConfig.PATCH
     cf = 'config.json'
+    pubip: str = None
+    timeout = ValidConfig.TIMEOUT
     try:
-        opts, _ = getopt(argv, "hc:s:p:", [
-                         "help", "config=", "semaphore=", "patch="])
+        opts, _ = getopt(argv, "hc:s:p:i:t:", [
+                         "help",
+                         "config=",
+                         "semaphore=",
+                         "patch=",
+                         "pubip=",
+                         "timeout="])
     except GetoptError:
         help(1)
     for opt, arg in opts:
-        if opt in ['-h', '--help']:
-            help()
-        if opt in ['-s', '--semaphore']:
-            sem = int(arg)
-        if opt in ['-p', '--patch']:
-            patch = int(arg)
-        if opt in ['-c', '--config']:
-            cf = arg
+        match opt:
+            case '-h' | '--help':
+                help()
+            case '-s' | '--semaphore':
+                sem = int(arg)
+            case '-p' | '--patch':
+                patch = int(arg)
+            case '-c' | '--config':
+                cf = arg
+            case '-i' | '--pubip':
+                if not is_formed_ipv4(arg):
+                    print(f"Malformed public ip address {arg}.")
+                pubip = arg
+            case '-t' | '--timeout':
+                timeout = int(arg)
+    if timeout < 1:
+        timeout = ValidConfig.TIMEOUT
+    if not pubip:
+        pubip = ValidConfig.PUBLIC_IP
     ConfigUtil(cf)
-    service = ValidService(patch, sem)
+    service = ValidService(Valid(pubip, timeout), patch, sem)
     logger.info(f'Start valid with patch {patch} and semaphore {sem}.')
     ret = asyncio.run(service.run(_cb))
     logger.info(f'Valid finished.')
