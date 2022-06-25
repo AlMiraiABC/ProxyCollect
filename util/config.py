@@ -72,6 +72,26 @@ class ValidConfig:
     """Number of each epoch."""
 
 
+class ScoreConfig:
+    def get(k: str, d: any):
+        return ConfigUtil().get_key(f'score.{k}', f'_SCORE_{k.upper()}', d)
+    INIT: int = int(get('init', 20))
+    """Default score."""
+    INCREASE: int = int(get('increase', 1))
+    """Increase step if valid successfully."""
+    DECREASE: int = int(get('decrease', 1))
+    """Decrease step if valid failed."""
+    THRESHOLD: int = int(get('threshold', 0))
+    """Set proxy unavailable if under threshold."""
+    DELETE: bool = False if get('delete', False) in [
+        'false', 'False', 'f', 'F', '0', 0, False, None] else True
+    """Whether delete it if score under the `THRESHOLD`"""
+    CEILING: int = int(get('ceiling', 50))
+    """The maximum score value."""
+    NADIR: int = int(get('nadir', -20))
+    """The minimum score value."""
+
+
 class CrawlsCrawlerConfig(TypedDict):
     """Config of crawls.crawlers"""
     callable: str
