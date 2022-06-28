@@ -36,8 +36,7 @@
 		"ms-ceintl.vscode-language-pack-zh-hans",
 		"vivaxy.vscode-conventional-commits",
 		"ryanluker.vscode-coverage-gutters",
-		// "TabNine.tabnine-vscode",
-		"GitHub.copilot"
+		"njpwerner.autodocstring"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
