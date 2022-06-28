@@ -11,7 +11,7 @@ from al_utils.logger import Logger
 from db.model import Anonymous, Protocol, Proxy, Verify
 from prettytable import PrettyTable
 from services.query_service import QueryService
-from util.config import QueryConfig, ValidConfig
+from util.config import QueryConfig, ScoreConfig, ValidConfig
 from util.config_util import ConfigUtil
 from util.converter import to_dict, to_url
 from util.ip import is_formed_ipv4
@@ -44,6 +44,7 @@ HELP = """PARAM:
                                 `skip` is ignored.
                             * count: Get the count number of query.
                                 `export` and `save` are ignored.
+-t, --ts <number>       Threadshold of score. The minimum score.
 -o, --output <type>     Result output format.
                             table, json, url
                             Default is `table`.
@@ -119,7 +120,7 @@ class OutputType(Enum):
 
 def main(argv: list):
     try:
-        opts, _ = getopt(argv, "hc:s:i:p:v:a:d:n:k:q:o:x:",
+        opts, _ = getopt(argv, "hc:s:i:p:v:a:d:n:k:q:t:o:x:",
                          [
                              "help", "dome", "domestic",
                              "config=",
@@ -131,6 +132,7 @@ def main(argv: list):
                              "num=",
                              "skip=",
                              "query=",
+                             "th=",
                              "output=",
                              "export="
                          ])
@@ -148,6 +150,7 @@ def main(argv: list):
     query: QueryType = QueryType.QUERY
     output: OutputType = OutputType.TABLE
     export: str = None  # path
+    ts: int = ScoreConfig.INIT
     for opt, arg in opts:
         match opt:
             case '-h' | '--help':
@@ -176,6 +179,8 @@ def main(argv: list):
                 skip = to_int(arg, 'Skip must >0.', lambda x: x > 0)
             case '-q' | '--query':
                 query = to_enum(QueryType, arg)
+            case '-t' | '-ts':
+                ts = to_int(arg)
             case '-o' | '--output':
                 output = to_enum(OutputType, arg)
             case '-x' | '--export':
@@ -192,7 +197,7 @@ def main(argv: list):
     match query:
         case QueryType.COUNT:
             c = asyncio.run(service.get_count(protocol, ip, port, verify,
-                                              anonymous, domestic))
+                                              anonymous, domestic, ts))
             ColoredConsole.print(f'COUNT: {c}.')
             return
         case QueryType.CHECK:
@@ -201,13 +206,13 @@ def main(argv: list):
                 logger.debug(f'set num to {num}.')
                 ColoredConsole.debug(f'Set num to {num}.')
             proxies = [asyncio.run(service.get_check(protocol, ip, port, verify,
-                                                     anonymous, domestic, num))]
+                                                     anonymous, domestic, num, ts))]
         case QueryType.RANDOM:
             proxies = asyncio.run(service.get_random(protocol, ip, port, verify,
-                                                     anonymous, domestic, num))
+                                                     anonymous, domestic, num, ts))
         case _:
             proxies = asyncio.run(service.get(protocol, ip, port, verify,
-                                              anonymous, domestic, num, skip))
+                                              anonymous, domestic, num, skip, ts))
     ColoredConsole.success(
         f"Got {len(proxies)} {'proxies' if len(proxies)>1 else 'proxy'}.")
     # endregion

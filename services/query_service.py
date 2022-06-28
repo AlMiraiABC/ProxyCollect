@@ -1,4 +1,4 @@
-from db.dbutil import DbUtil
+from db.dbutil import DbUtil, default_update_cb
 from db.model import Anonymous, Protocol, Proxy, Verify
 from util.ip import is_formed_ipv4
 from util.valid import Valid
@@ -27,7 +27,8 @@ class QueryService:
                   anonymous: Anonymous | str = None,
                   domestic: bool = None,
                   limit: int = 1,
-                  skip: int = 0
+                  skip: int = 0,
+                  min_score: int = 20
                   ) -> list[Proxy]:
         """
         Get proxies.
@@ -43,7 +44,7 @@ class QueryService:
         if not skip or skip < 0:
             skip = 0
             logger.debug(f'set skip to {skip}')
-        return await self._db.gets(protocol, ip, port, verify, anonymous, domestic, limit, skip)
+        return await self._db.gets(protocol, ip, port, verify, anonymous, domestic, limit, skip, min_score)
 
     async def get_count(self,
                         protocol: Protocol | str = None,
@@ -51,13 +52,14 @@ class QueryService:
                         port: int = None,
                         verify: Verify | str = None,
                         anonymous: Anonymous | str = None,
-                        domestic: bool = None) -> int:
+                        domestic: bool = None,
+                        min_score: int = 20) -> int:
         """
         Get count of proxies.
         """
         protocol, ip, port, verify, anonymous, domestic = self._verify_query_params(
             protocol, ip, port, verify, anonymous, domestic)
-        return await self._db.count(protocol, ip, port, verify, anonymous, domestic)
+        return await self._db.count(protocol, ip, port, verify, anonymous, domestic, min_score)
 
     async def get_random(self,
                          protocol: Protocol | str = None,
@@ -66,14 +68,16 @@ class QueryService:
                          verify: Verify | str = None,
                          anonymous: Anonymous | str = None,
                          domestic: bool = None,
-                         count: int = 1) -> list[Proxy]:
+                         count: int = 1,
+                         min_score: int = 20
+                         ) -> list[Proxy]:
         protocol, ip, port, verify, anonymous, domestic = self._verify_query_params(
             protocol, ip, port, verify, anonymous, domestic)
         if not count or count < 1:
             count = 1
             logger.debug(f'set count to {count}.')
         return await self._db.gets_random(
-            protocol, ip, port, verify, anonymous, domestic, count)
+            protocol, ip, port, verify, anonymous, domestic, count, min_score)
 
     async def get_check(self,
                         protocol: Protocol | str = None,
@@ -82,7 +86,8 @@ class QueryService:
                         verify: Verify | str = None,
                         anonymous: Anonymous | str = None,
                         domestic: bool = None,
-                        check_count: int = 1) -> Proxy | None:
+                        check_count: int = 1,
+                        min_score: int = 20) -> Proxy | None:
         """
         Get a checked proxy.
 
@@ -94,14 +99,14 @@ class QueryService:
         if not check_count or check_count < 1:
             check_count = 1
             logger.debug(f'set check_count to {check_count}.')
-        proxies = await self.get_random(
-            protocol, ip, port, verify, anonymous, domestic, check_count)
+        proxies = await self.get_random(protocol, ip, port, verify, anonymous, domestic,
+                                        check_count, min_score)
         for proxy in proxies:
             # TODO: 2022-06-19 support different check methods.
             speed, anon = await self._valid.async_req(proxy)
             logger.debug(f'Proxy {proxy.id} speed: {speed} anonymous: {anon}')
             if self._backfill:
-                await self.backfill(proxy, speed, anon)
+                await self._db._update(proxy, default_update_cb(speed, anon))
                 logger.debug(f'backfill {proxy.id}.')
             if speed > 0:
                 if not anonymous:
@@ -128,13 +133,3 @@ class QueryService:
         if ip and not is_formed_ipv4(ip):
             raise ValueError(f'Malformed IP address {ip}.')
         return protocol, ip, port, verify, anonymous, domestic
-
-    async def backfill(self, proxy: Proxy, speed: float, anonymous: Anonymous):
-        """
-        Update proxy.
-        """
-        def cb(i):
-            i.speed = speed
-            i.anonymous = anonymous
-            return i
-        await self._db._update(proxy, cb)
