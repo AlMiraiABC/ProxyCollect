@@ -50,7 +50,7 @@ async def kuaidaili(page_start: int = 1, page_end: int = 1, headers={}, timeout:
     proxies: list[Proxy] = []
     succs: list[str] = []
     fails: list[str] = []
-    _p = to_aiohttp_proxy(get_one_proxy(Protocol.HTTPS))
+    _p = to_aiohttp_proxy(await get_one_proxy(Protocol.HTTPS))
     async with ClientSession() as session:
         for baseurl, anonymous in urls:
             for page in range(page_start, page_end + 1):
@@ -131,7 +131,7 @@ async def nimadaili(page_start: int = 1, page_end: int = 1, headers={}, timeout:
     proxies: list[Proxy] = []
     succs: list[str] = []
     fails: list[str] = []
-    _p = to_aiohttp_proxy(get_one_proxy(Protocol.HTTP))
+    _p = to_aiohttp_proxy(await get_one_proxy(Protocol.HTTP))
     async with ClientSession() as session:
         for baseurl in urls:
             for page in range(page_start, page_end + 1):
@@ -182,7 +182,7 @@ async def proxy_ip3366(page_start: int = 1, page_end: int = 1, headers={}, timeo
     proxies: list[Proxy] = []
     succs: list[str] = []
     fails: list[str] = []
-    _p = to_aiohttp_proxy(get_one_proxy(Protocol.HTTPS))
+    _p = to_aiohttp_proxy(await get_one_proxy(Protocol.HTTPS))
     url = "https://proxy.ip3366.net/free/"
     async with ClientSession() as session:
         for page in range(page_start, page_end+1):
@@ -249,7 +249,7 @@ async def ip3366(page_start: int = 1, page_end: int = 1, headers={}, timeout: in
     proxies: list[Proxy] = []
     succs: list[str] = []
     fails: list[str] = []
-    _p = to_aiohttp_proxy(get_one_proxy(Protocol.HTTP))
+    _p = to_aiohttp_proxy(await get_one_proxy(Protocol.HTTP))
     baseurl = "http://www.ip3366.net/free"
     async with ClientSession() as session:
         for t in types:
@@ -319,7 +319,7 @@ async def ihuan(page_end: int = 1, headers={}, timeout: int = 10, **kwargs) -> C
     proxies: list[Proxy] = []
     succs: list[str] = []
     fails: list[str] = []
-    _p = to_aiohttp_proxy(get_one_proxy(Protocol.HTTPS))
+    _p = to_aiohttp_proxy(await get_one_proxy(Protocol.HTTPS))
     baseurl = "https://ip.ihuan.me/"
     async with ClientSession() as session:
         page = 1
@@ -397,7 +397,7 @@ async def ip89(page_start: int = 1, page_end: int = 1, headers={}, timeout: int 
     proxies: list[Proxy] = []
     succs: list[str] = []
     fails: list[str] = []
-    _p = to_aiohttp_proxy(get_one_proxy(Protocol.HTTP))
+    _p = to_aiohttp_proxy(await get_one_proxy(Protocol.HTTP))
     baseurl = "https://www.89ip.cn/"
     async with ClientSession() as session:
         for page in range(page_start, page_end+1):
@@ -465,7 +465,7 @@ async def ip89_api(num: int = 60, port: int = None, exclude_port: int = None, ad
     proxies: list[Proxy] = []
     succs: list[str] = []
     fails: list[str] = []
-    _p = to_aiohttp_proxy(get_one_proxy(Protocol.HTTPS))
+    _p = to_aiohttp_proxy(await get_one_proxy(Protocol.HTTPS))
     url = baseurl
     async with ClientSession() as session:
         try:
