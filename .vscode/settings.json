@@ -16,5 +16,6 @@
         "services",
         "command"
     ],
-    "python.envFile": "${workspaceFolder}/.env"
+    "python.envFile": "${workspaceFolder}/.env",
+    "autoDocstring.docstringFormat": "sphinx-notypes"
 }
