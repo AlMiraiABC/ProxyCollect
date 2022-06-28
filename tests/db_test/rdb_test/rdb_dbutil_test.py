@@ -126,7 +126,7 @@ class TestRDBDbUtil(IsolatedAsyncioTestCase):
         with self.util.Session() as session:
             inserted = self._insert(session, ins)
             await self.util.delete(inserted)
-        with self.util.Session() as session: # creat enew session
+        with self.util.Session() as session:  # creat enew session
             q = session.get(TBProxy, inserted.id)
             self.assertIsNone(q)
 
@@ -139,3 +139,27 @@ class TestRDBDbUtil(IsolatedAsyncioTestCase):
             session.delete(inserted)
             session.commit()
             self.util.delete(inserted)
+
+    async def test_gets_score(self):
+        ins = [
+            TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.1', port=3306,
+                    verify=Verify.HTTPS, anonymous=Anonymous.HIGH, score=30),
+            TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.2', port=3306,
+                    verify=Verify.HTTPS, anonymous=Anonymous.HIGH, score=10),
+            TBProxy(protocol=Protocol.HTTPS, ip='127.0.0.3', port=3306,
+                    verify=Verify.UDP, anonymous=Anonymous.HIGH, score=10)
+        ]
+        with self.util.Session() as session:
+            session.add_all(ins)
+            session.commit()
+            # SELECT...
+            # FROM proxy
+            # WHERE proxy.protocol = %(protocol_1)s AND proxy.verify = %(verify_1)s
+            # LIMIT %(param_1)s, %(param_2)s
+            gets = await self.util.gets(protocol=Protocol.HTTPS, verify=Verify.HTTPS, min_score=15)
+            self.assertSetEqual(
+                set([ins[0].id]), set([p.id for p in gets]))
+
+    async def test_gets_score_empty(self):
+        gets = await self.util.gets(protocol=Protocol.HTTPS, verify=Verify.HTTPS, min_score=15, max_score=10)
+        self.assertListEqual(gets, [])

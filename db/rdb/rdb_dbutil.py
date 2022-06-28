@@ -60,27 +60,37 @@ class RDBDbUtil(BaseDbUtil):
         return await self._update(proxy, set_socre)
 
     async def gets(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
-                   limit: int = 100, offset: int = 0) -> list[StoredProxy]:
+                   limit: int = 100, offset: int = 0, min_score: int = None, max_score: int = None) -> list[StoredProxy]:
         if not limit or limit <= 0:
             logger.debug(f'set limit from {limit} to {100}.')
             limit = 100
         if not offset or offset < 0:
             logger.debug(f'set offset from {offset} to {0}.')
             offset = 0
+        if min_score is not None and max_score is not None and max_score < min_score:
+            logger.debug(f'min{min_score} > max{max_score}.')
+            return []
         with self.Session() as session:
             query = self._gen_query(session, protocol, ip, port,
-                                    verify, anonymous, domestic)
+                                    verify, anonymous, domestic,
+                                    min_score, max_score)
             results: list[TBProxy] = query.offset(offset).limit(limit).all()
             return [self.to_storedproxy(r) for r in results]
 
-    async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None) -> int:
+    async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None, min_score: int = None, max_score: int = None) -> int:
+        if min_score is not None and max_score is not None and max_score < min_score:
+            logger.debug(f'min{min_score} > max{max_score}.')
+            return 0
         with self.Session() as session:
             query = self._gen_query(session, protocol, ip, port,
                                     verify, anonymous, domestic)
             result: int = query.count()
             return result
 
-    async def gets_random(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None, limit: int = 100) -> list[StoredProxy]:
+    async def gets_random(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None, limit: int = 100, min_score: int = None, max_score: int = None) -> list[StoredProxy]:
+        if min_score is not None and max_score is not None and max_score < min_score:
+            logger.debug(f'min{min_score} > max{max_score}.')
+            return []
         with self.Session() as session:
             query = self._gen_query(session, protocol, ip, port,
                                     verify, anonymous, domestic)
@@ -97,8 +107,7 @@ class RDBDbUtil(BaseDbUtil):
             self.dao.delete_by_id(session, proxy.id)
             session.commit()
 
-
-    def _gen_query(self, session: Session, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None):
+    def _gen_query(self, session: Session, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None, min_score: int = None, max_score: int = None):
         query = session.query(TBProxy)
         if protocol:
             query = query.filter(TBProxy.protocol == protocol)
@@ -112,6 +121,10 @@ class RDBDbUtil(BaseDbUtil):
             query = query.filter(TBProxy.anonymous == anonymous)
         if domestic:
             query = query.filter(TBProxy.domestic == domestic)
+        if min_score is not None:
+            query = query.filter(TBProxy.score >= min_score)
+        if max_score is not None:
+            query = query.filter(TBProxy.score <= max_score)
         return query
 
     def to_storedproxy(self, proxy: TBProxy) -> StoredProxy | None:

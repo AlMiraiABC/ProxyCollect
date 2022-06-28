@@ -61,14 +61,14 @@ class BaseDbUtil(ABC):
 
     @abstractmethod
     async def gets(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
-                   limit: int = 100, offset: int = 0) -> list[StoredProxy]:
+                   limit: int = 100, offset: int = 0, min_score: int = None, max_score: int = None) -> list[StoredProxy]:
         """
         Get proxies by given conditions.
         """
         pass
 
     @abstractmethod
-    async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None) -> int:
+    async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,  min_score: int = None, max_score: int = None) -> int:
         """
         Get count number by given conditions.
         """
@@ -76,7 +76,7 @@ class BaseDbUtil(ABC):
 
     @abstractmethod
     async def gets_random(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
-                          limit: int = 100) -> list[StoredProxy]:
+                          limit: int = 100, min_score: int = None, max_score: int = None) -> list[StoredProxy]:
         """
         Get random proxies by given conditions.
         """
