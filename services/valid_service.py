@@ -1,11 +1,10 @@
 import asyncio
 import time
 from asyncio import Queue
-from multiprocessing import Event
 from typing import Callable
 
 from al_utils.logger import Logger
-from db.dbutil import DbUtil
+from db.dbutil import DbUtil, default_update_cb
 from db.model import StoredProxy
 from util.valid import Valid
 
@@ -13,7 +12,7 @@ logger = Logger(__file__).logger
 
 
 class ValidService:
-    def __init__(self, valid:Valid, patch: int = 500, semaphore: int = 50):
+    def __init__(self, valid: Valid, patch: int = 500, semaphore: int = 50):
         self.patch = patch if patch >= 50 else 500
         self.semaphore = semaphore if semaphore > 10 else 50
         self._cursor: int = 0
@@ -23,7 +22,6 @@ class ValidService:
         """
         self._db = DbUtil()
         self._valid = valid
-        self._stop = Event()
         self._queue: Queue[StoredProxy] = Queue(patch*1.2)
 
     async def get_patch(self) -> list[StoredProxy]:
@@ -40,12 +38,7 @@ class ValidService:
     async def update(self, proxy: StoredProxy):
         """Valid and update :param:`proxy`"""
         speed, anonymous = await self._valid.async_valid(proxy)
-
-        def cb(i: StoredProxy):
-            i.anonymous = anonymous
-            i.speed = speed
-            return i
-        ret = await self._db._update(proxy, cb)
+        ret = await self._db._update(proxy, default_update_cb(speed, anonymous))
         if not ret:
             logger.warning(f'Update proxy failed from {proxy} to '
                            f'{{anonymous: {anonymous}, speed: {speed}}}')
@@ -60,7 +53,7 @@ class ValidService:
         logger.debug("Start valid proxies.")
         updated: list[StoredProxy] = []
         async with asyncio.Semaphore(self.semaphore):
-            while not self._queue.empty() and not self._stop.is_set():
+            while not self._queue.empty():
                 proxy = await self._queue.get()
                 updated.append(await self.update(proxy))
         logger.debug(f"Valid proxies finished. "
@@ -94,8 +87,7 @@ class ValidService:
         if self._cursor < 0:
             raise RuntimeError('Service already stopped.')
         ret = []
-        self._stop.clear()
-        while self._cursor >= 0 and not self._stop.is_set():
+        while self._cursor >= 0:
             logger.info(f"Get patch from {self._cursor}.")
             start_time = time.time()
             results = await self.run_patch()
@@ -108,7 +100,6 @@ class ValidService:
             if patch_cb:
                 patch_cb(results, c, f, t)
             ret.append((c, f, t))
-        self._stop.set()
         return ret
 
     def _count(self, proxies: list[StoredProxy]):
@@ -123,18 +114,3 @@ class ValidService:
         t = len([proxy for proxy in proxies
                  if proxy and proxy.speed == -1])
         return c, f, t
-
-    async def pause(self):
-        """
-        Pause runing. Exec :meth:`run` to continue.
-        """
-        self._stop.set()
-
-    async def stop(self):
-        """
-        Stop running.
-        """
-        self._cursor = -1
-        self._stop.set()
-        while not self._queue.empty():
-            await self._queue.get()

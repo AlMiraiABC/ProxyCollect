@@ -4,6 +4,7 @@ from al_utils.logger import Logger
 from al_utils.meta import merge_meta
 from al_utils.singleton import Singleton
 from util.config import DBConfig, RDBConfig
+from util.score import Score
 
 from db.base_dbutil import BaseDbUtil
 from db.model import Anonymous, Protocol, Proxy, StoredProxy, Verify
@@ -11,6 +12,14 @@ from db.rdb.rdb_dbutil import RDBDbUtil
 
 logger = Logger(__file__).logger
 
+
+def default_update_cb(speed: float, anonymous: Anonymous):
+    def cb(i: StoredProxy):
+        i.anonymous = anonymous
+        i.speed = speed
+        i.score = Score.calc(i.speed, i.score)
+        return i
+    return cb
 
 class DbUtil(merge_meta(BaseDbUtil, Singleton)):
     def __init__(self):
