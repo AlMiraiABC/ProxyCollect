@@ -121,11 +121,13 @@ class QueryConfig:
     def get(k: str, d: any):
         return ConfigUtil().get_key(f'api.{k}', f'_API_{k.upper()}', d)
 
-    MAX_LIMIT: int = int(get('max_limit', 100))
-    """Maximum total number of queried proxies."""
+    MAX_PS: int = int(get('max_limit', 100))
+    """Maximum total number of queried proxies in one page."""
     BACKFILL: bool = bool(get('backfill', False))
     """
     Whether update proxy when check in query.
 
     If True, the dbuser must have update privilege.
     """
+    DEFAULT_PS:int = int(get('default_ps',20))
+    """Default page size. The default count number of proxies in one page."""

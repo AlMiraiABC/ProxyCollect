@@ -4,7 +4,7 @@ import os
 from enum import Enum
 from getopt import GetoptError, getopt
 import sys
-from typing import Callable, Type
+from typing import Callable
 
 from al_utils.console import ColoredConsole
 from al_utils.logger import Logger
@@ -62,12 +62,12 @@ def help(c=0):
     exit(c)
 
 
-def to_enum(t: Type[Enum], v: str) -> Enum:
+def to_enum(t: type[Enum], v: str):
     try:
         return t[v.upper()]
     except:
         print(f'Unexpected {t.__name__.lower()} type {v}.')
-        exit(1)
+        return None
 
 
 def to_int(v: str, tip: str = '', comp: Callable[[int], bool] = lambda _: True):
@@ -78,7 +78,7 @@ def to_int(v: str, tip: str = '', comp: Callable[[int], bool] = lambda _: True):
         return i
     except:
         print(f"Unexpected number {v}. {tip}")
-        exit(1)
+        return None
 
 
 def to_table(proxies: list[Proxy]):
@@ -190,7 +190,7 @@ def main(argv: list):
                 export = arg
     ConfigUtil(cf)
     valid = Valid(ValidConfig.PUBLIC_IP, ValidConfig.TIMEOUT)
-    service = QueryService(valid, QueryConfig.MAX_LIMIT, QueryConfig.BACKFILL)
+    service = QueryService(valid, QueryConfig.MAX_PS, QueryConfig.BACKFILL)
     proxies: list[Proxy] = []
     # region query
     ColoredConsole.info('Starting query...')
