@@ -1,7 +1,7 @@
 from typing import Awaitable, Callable
 
 from al_utils.logger import Logger
-from crawls.crawlers import CRAW_RET
+from crawls.crawlers import CRAWL_RET
 from db.dbutil import DbUtil
 from db.model import Proxy
 from util.implib import import_function
@@ -27,7 +27,7 @@ class CrawlService:
             crawler = f'crawls.crawlers.{crawler}'
         return import_function(crawler)
 
-    async def run(self, crawler: str | Callable[[any], Awaitable[CRAW_RET]], *args, **kwargs) -> CRAW_RET:
+    async def run(self, crawler: str | Callable[[any], Awaitable[CRAWL_RET]], *args, **kwargs) -> CRAWL_RET:
         """
         Run a crawler.
 
