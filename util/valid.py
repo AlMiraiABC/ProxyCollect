@@ -1,16 +1,40 @@
 import re
 import time
-from typing import Awaitable, Callable, Literal
+from typing import Awaitable, Callable, Type
 
+import aiohttp
 import requests
-from aiohttp import ClientResponse as AioResponse, ClientSession
+from aiohttp import ClientResponse as AioResponse
+from aiohttp import ClientSession
 from al_utils.logger import Logger
 from db.model import Anonymous, Protocol, Proxy
-from requests import Response
 
 from util.converter import to_aiohttp_proxy, to_req_proxies
 
 logger = Logger(__file__).logger
+
+SYNC_M_PREFIX = 'sync_'
+ASYNC_M_PREFIX = 'async_'
+SyncValidCallable = Callable[[Proxy, float], Anonymous]
+"""
+All sync valid methods should be this type and startswith `sync_`.
+Such as `sync_nmtsoft`.
+
+>>> def sync_*(proxy, timeout)->Anonymous:
+        pass
+"""
+AsyncValidCallable = Callable[[Proxy, float], Awaitable[Anonymous]]
+"""
+All async valid methods should be this type and startswith `async_`.
+Such as `async_nmtsoft`.
+
+>>> async def async_*(proxy, timeout)->Anonymous:
+        pass
+"""
+
+
+class BaseValidCallables:
+    pass
 
 
 class ValidHelper:
@@ -27,7 +51,7 @@ class ValidHelper:
         return Anonymous.HIGH
 
     @staticmethod
-    def sync_get(url: str, proxy: Proxy, timeout: float = None, get_content: Callable[[Response], str] = None):
+    def sync_get(url: str, proxy: Proxy, timeout: float = None, get_content: Callable[[requests.Response], str] = None):
         """
         Send request via GET to :param:`url` to check :param:`proxy`'s anonymous type synchronously.
 
@@ -92,21 +116,33 @@ class Valid:
         :raise ValueError: Socks are not supported in current version.
         """
         timeout = timeout or self.timeout
-        time_start = time.time()
         match proxy.protocol:
             case Protocol.HTTP:
-                f = self.sync_http
+                methods, _ = self.get_valid_methods(ValidHTTP)
             case Protocol.HTTPS:
-                f = self.sync_https
+                methods, _ = self.get_valid_methods(ValidHTTPS)
             case _:
                 raise ValueError(f'Unsupport protocol {proxy.protocol}. '
                                  f'SOCKS are not supported in current version.')
-        try:
-            anon = f(proxy, timeout)
-            time_req = time.time()-time_start
-            return time_req, anon
-        except:
-            logger.warning(f'Cannot get from {f}.', exc_info=True)
+        for method in methods:
+            try:
+                time_start = time.time()
+                anon = method(proxy, timeout)
+                time_req = time.time()-time_start
+                return time_req, anon
+            except (requests.exceptions.ProxyError,
+                    requests.exceptions.SSLError):
+                logger.warning(
+                    f'Proxy refused to {method} via {proxy}.', exc_info=True)
+                return -2, Anonymous.TRANSPARENT
+            except (requests.exceptions.RequestException):
+                logger.warning(
+                    f'Cannot connect to {method} via {proxy}.', exc_info=True)
+                continue
+            except:
+                logger.warning(
+                    f'Occured err when {method} via {proxy}', exc_info=True)
+                continue
         return -1, Anonymous.TRANSPARENT
 
     async def async_valid(self, proxy: Proxy, timeout: float = None) -> tuple[float, Anonymous]:
@@ -118,45 +154,77 @@ class Valid:
         Asynchronous is nonpreemptive. Speed is inaccurate(longer than sync).
         """
         timeout = timeout or self.timeout
-        time_start = time.time()
         match proxy.protocol:
             case Protocol.HTTP:
-                f = self.async_http
+                _, methods = self.get_valid_methods(ValidHTTP)
             case Protocol.HTTPS:
-                f = self.async_https
+                _, methods = self.get_valid_methods(ValidHTTPS)
             case _:
-                raise ValueError(
-                    f'Unsupport protocol {proxy.protocol}. SOCKS are not supported in current version.')
-        try:
-            anon = await f(proxy, timeout)
-            time_req = time.time()-time_start
-            return time_req, anon
-        except:
-            logger.warning(f'Cannot get from {f}.', exc_info=True)
+                raise ValueError(f'Unsupport protocol {proxy.protocol}. '
+                                 f'SOCKS are not supported in current version.')
+        for method in methods:
+            try:
+                time_start = time.time()
+                anon = await method(proxy, timeout)
+                time_req = time.time()-time_start
+                return time_req, anon
+            except (aiohttp.ClientSSLError,
+                    aiohttp.ClientConnectorError, # ClientProxyConnectionError
+                    aiohttp.ClientHttpProxyError):
+                logger.warning(
+                    f'Proxy refused to {method} via {proxy}.', exc_info=True)
+                return -2, Anonymous.TRANSPARENT
+            except (aiohttp.ClientError):
+                logger.warning(
+                    f'Cannot connect to {method} via {proxy}.', exc_info=True)
+                continue
+            except:
+                logger.warning(
+                    f'Occured err when {method} via {proxy}', exc_info=True)
+                continue
         return -1, Anonymous.TRANSPARENT
 
-    def sync_http(self, proxy: Proxy, timeout: int = None, method: Literal['nmtsoft'] = 'nmtsoft') -> Anonymous:
+    def get_valid_methods(self, t: Type[BaseValidCallables]) -> tuple[list[SyncValidCallable], list[AsyncValidCallable]]:
+        """
+        Get methods from :param:`t` which startswith `SYNC_M_PREFIX` and `ASYNC_M_PREFIX`.
+
+        :param t: Class which contain valid methods.
+        :return: (sync_methods, async_methods)
+        """
+        methods = dir(t)
+        syncs = []
+        asyncs = []
+        for m in methods:
+            method = getattr(t, m)
+            if hasattr(method, '__call__'):
+                if m.startswith(SYNC_M_PREFIX):
+                    syncs.append(method)
+                if m.startswith(ASYNC_M_PREFIX):
+                    asyncs.append(method)
+        return syncs, asyncs
+
+    def sync_http(self, proxy: Proxy, method: str, timeout: int = None) -> Anonymous:
         f = getattr(ValidHTTP, f'sync_{method}')
         logger.debug(f'Use {f}')
         return f(proxy, timeout)
 
-    async def async_http(self, proxy: Proxy, timeout: float = None, method: Literal['nmtsoft'] = 'nmtsoft') -> Anonymous:
+    async def async_http(self, proxy: Proxy, method: str, timeout: float = None) -> Anonymous:
         f = getattr(ValidHTTP, f'async_{method}')
         logger.debug(f'Use {f}')
         return await f(proxy, timeout)
 
-    def sync_https(self, proxy: Proxy, timeout: int = None, method: Literal['nmtsoft', 'ifconfig'] = 'ifconfig') -> Anonymous:
+    def sync_https(self, proxy: Proxy, method: str, timeout: int = None) -> Anonymous:
         f = getattr(ValidHTTPS, f'sync_{method}')
         logger.debug(f'Use {f}')
         return f(proxy, timeout)
 
-    async def async_https(self, proxy: Proxy, timeout: float = None, method: Literal['nmtsoft', 'ifconfig'] = 'ifconfig') -> Anonymous:
+    async def async_https(self, proxy: Proxy, method: str, timeout: float = None) -> Anonymous:
         f = getattr(ValidHTTPS, f'async_{method}')
         logger.debug(f'Use {f}')
         return await f(proxy, timeout)
 
 
-class ValidHTTP:
+class ValidHTTP(BaseValidCallables):
     @staticmethod
     def sync_nmtsoft(proxy: Proxy, timeout: float = None):
         url = 'http://checkip.nmtsoft.net/forwarded'
@@ -170,7 +238,7 @@ class ValidHTTP:
         return await ValidHelper.async_get(url, proxy, timeout, get_content)
 
 
-class ValidHTTPS:
+class ValidHTTPS(BaseValidCallables):
     @staticmethod
     def sync_ifconfig(proxy: Proxy, timeout: float = None):
         url = 'https://ifconfig.me/forwarded'

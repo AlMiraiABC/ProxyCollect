@@ -7,7 +7,7 @@ import requests
 from db.model import Anonymous, Protocol, Proxy, Verify
 from util.config import ValidConfig
 
-from util.valid import Valid, ValidHelper
+from util.valid import BaseValidCallables, Valid, ValidHelper
 
 
 class MockResp:
@@ -99,7 +99,7 @@ class TestValid(IsolatedAsyncioTestCase):
 
     @patch.object(requests, 'get', lambda *_, **__: MockResp(200, '3.3.3.3'))
     def test_sync_http(self):
-        anon = self.valid.sync_http(mock_proxy())
+        anon = self.valid.sync_http(mock_proxy(), 'nmtsoft')
         self.assertEqual(anon, Anonymous.HIGH)
 
     def test_sync_http_unattr(self):
@@ -108,7 +108,7 @@ class TestValid(IsolatedAsyncioTestCase):
 
     @patch.object(requests, 'get', lambda *_, **__: MockResp(200, '3.3.3.3'))
     def test_sync_https(self):
-        anon = self.valid.sync_https(mock_proxy())
+        anon = self.valid.sync_https(mock_proxy(), 'nmtsoft')
         self.assertEqual(anon, Anonymous.HIGH)
 
     def test_sync_https_unattr(self):
@@ -119,23 +119,46 @@ class TestValid(IsolatedAsyncioTestCase):
     async def test_async_http(self, mock: aioresponses):
         mock.get('http://checkip.nmtsoft.net/forwarded',
                  body='3.3.3.3')
-        anon = await self.valid.async_http(mock_proxy())
+        anon = await self.valid.async_http(mock_proxy(), 'nmtsoft')
         self.assertEqual(anon, Anonymous.HIGH)
 
     async def test_async_http_unattr(self):
         with self.assertRaises(AttributeError):
-            await self.valid.async_http(mock_proxy(), 30, 'unexist')
+            await self.valid.async_http(mock_proxy(), 'unexist')
 
     @aioresponses()
     async def test_async_https(self, mock: aioresponses):
         mock.get('https://checkip.nmtsoft.net/forwarded',
                  body='3.3.3.3')
-        anon = await self.valid.async_https(mock_proxy(), 30, 'nmtsoft')
+        anon = await self.valid.async_https(mock_proxy(), 'nmtsoft')
         self.assertEqual(anon, Anonymous.HIGH)
 
     async def test_async_https_unattr(self):
         with self.assertRaises(AttributeError):
-            await self.valid.async_https(mock_proxy(), 30, 'unexist')
+            await self.valid.async_https(mock_proxy(), 'unexist')
+
+    def test_get_valid_methods(self):
+        class T(BaseValidCallables):
+            def sync_a():
+                pass
+
+            def sync_b():
+                pass
+
+            async def async_a():
+                pass
+
+            async def async_b():
+                pass
+        syncs,  asyncs = self.valid.get_valid_methods(T)
+        self.assertListEqual(
+            [m.__name__ for m in [T.sync_a, T.sync_b]],
+            [m.__name__ for m in syncs]
+        )
+        self.assertListEqual(
+            [m.__name__ for m in [T.async_a, T.async_b]],
+            [m.__name__ for m in asyncs]
+        )
 
 
 @skip("""A real proxy and always change.
