@@ -61,14 +61,15 @@ class BaseDbUtil(ABC):
 
     @abstractmethod
     async def gets(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
-                   limit: int = 100, offset: int = 0, min_score: int = None, max_score: int = None) -> list[StoredProxy]:
+                   limit: int = 100, offset: int = 0, min_score: int = None, max_score: int = None, min_speed: float = None, max_speed: float = None) -> list[StoredProxy]:
         """
         Get proxies by given conditions.
         """
         pass
 
     @abstractmethod
-    async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,  min_score: int = None, max_score: int = None) -> int:
+    async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
+                    min_score: int = None, max_score: int = None, min_speed: float = None, max_speed: float = None) -> int:
         """
         Get count number by given conditions.
         """
@@ -76,7 +77,7 @@ class BaseDbUtil(ABC):
 
     @abstractmethod
     async def gets_random(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
-                          limit: int = 100, min_score: int = None, max_score: int = None) -> list[StoredProxy]:
+                          limit: int = 100, min_score: int = None, max_score: int = None, min_speed: float = None, max_speed: float = None) -> list[StoredProxy]:
         """
         Get random proxies by given conditions.
         """
@@ -88,3 +89,30 @@ class BaseDbUtil(ABC):
         Delete this proxy.
         """
         pass
+
+    def _check_min_max(self, min: int | float | None, max: int | float | None) -> bool:
+        """
+        Determine whether :param:`min` <= :param:`max`.
+
+        :param min: Min value.
+        :param max: Max value.
+        :return: True if one of min or max is None, or min <= max. Otherwise False.
+
+        Example:
+        -----------------------
+        >>> _check_min_max(None, 1) # min=None
+        True
+        >>> _check_min_max(1, None) # max=None
+        True
+        >>> _check_min_max(None, None) # min=None, max=None
+        True
+        >>> _check_min_max(1, 1) # min==max
+        True
+        >>> _check_min_max(0, 1) # min<max
+        True
+        >>> _check_min_max(1, 0) # min>max
+        False
+        """
+        if min is None or max is None:
+            return True
+        return min <= max

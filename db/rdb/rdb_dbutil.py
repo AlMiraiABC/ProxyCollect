@@ -59,41 +59,57 @@ class RDBDbUtil(BaseDbUtil):
             return i
         return await self._update(proxy, set_socre)
 
-    async def gets(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
-                   limit: int = 100, offset: int = 0, min_score: int = None, max_score: int = None) -> list[StoredProxy]:
+    async def gets(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None,
+                   anonymous: Anonymous = None, domestic: bool = None, limit: int = 100, offset: int = 0,
+                   min_score: int = None, max_score: int = None, min_speed: float = None, max_speed: float = None):
         if not limit or limit <= 0:
             logger.debug(f'set limit from {limit} to {100}.')
             limit = 100
         if not offset or offset < 0:
             logger.debug(f'set offset from {offset} to {0}.')
             offset = 0
-        if min_score is not None and max_score is not None and max_score < min_score:
-            logger.debug(f'min{min_score} > max{max_score}.')
+        if not self._check_min_max(min_score, max_score):
+            logger.debug(f'score min {min_score} > max {max_score}.')
+            return []
+        if not self._check_min_max(min_speed, max_speed):
+            logger.debug(f'speed min {min_score} > max {max_score}.')
             return []
         with self.Session() as session:
             query = self._gen_query(session, protocol, ip, port,
                                     verify, anonymous, domestic,
-                                    min_score, max_score)
+                                    min_score, max_score, min_speed, max_speed)
             results: list[TBProxy] = query.offset(offset).limit(limit).all()
             return [self.to_storedproxy(r) for r in results]
 
-    async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None, min_score: int = None, max_score: int = None) -> int:
-        if min_score is not None and max_score is not None and max_score < min_score:
-            logger.debug(f'min{min_score} > max{max_score}.')
-            return 0
-        with self.Session() as session:
-            query = self._gen_query(session, protocol, ip, port,
-                                    verify, anonymous, domestic)
-            result: int = query.count()
-            return result
-
-    async def gets_random(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None, limit: int = 100, min_score: int = None, max_score: int = None) -> list[StoredProxy]:
-        if min_score is not None and max_score is not None and max_score < min_score:
-            logger.debug(f'min{min_score} > max{max_score}.')
+    async def count(self, protocol: Protocol = None, ip: str = None, port: int = None,
+                    verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
+                    min_score: int = None, max_score: int = None, min_speed: float = None, max_speed: float = None) -> int:
+        if not self._check_min_max(min_score, max_score):
+            logger.debug(f'score min {min_score} > max {max_score}.')
+            return []
+        if not self._check_min_max(min_speed, max_speed):
+            logger.debug(f'speed min {min_score} > max {max_score}.')
             return []
         with self.Session() as session:
             query = self._gen_query(session, protocol, ip, port,
-                                    verify, anonymous, domestic)
+                                    verify, anonymous, domestic,
+                                    min_score, max_score, min_speed, max_speed)
+            result: int = query.count()
+            return result
+
+    async def gets_random(self, protocol: Protocol = None, ip: str = None, port: int = None,
+                          verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None, limit: int = 100,
+                          min_score: int = None, max_score: int = None, min_speed: float = None, max_speed: float = None):
+        if not self._check_min_max(min_score, max_score):
+            logger.debug(f'score min {min_score} > max {max_score}.')
+            return []
+        if not self._check_min_max(min_speed, max_speed):
+            logger.debug(f'speed min {min_score} > max {max_score}.')
+            return []
+        with self.Session() as session:
+            query = self._gen_query(session, protocol, ip, port,
+                                    verify, anonymous, domestic,
+                                    min_score, max_score, min_speed, max_speed)
             # https://docs.sqlalchemy.org/en/14/core/functions.html#sqlalchemy.sql.functions.random
             # https://stackoverflow.com/a/33583008
             results: list[TBProxy] = query.order_by(
@@ -107,7 +123,9 @@ class RDBDbUtil(BaseDbUtil):
             self.dao.delete_by_id(session, proxy.id)
             session.commit()
 
-    def _gen_query(self, session: Session, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None, min_score: int = None, max_score: int = None):
+    def _gen_query(self, session: Session, protocol: Protocol = None, ip: str = None, port: int = None,
+                   verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
+                   min_score: int = None, max_score: int = None, min_speed: float = None, max_speed: float = None):
         query = session.query(TBProxy)
         if protocol:
             query = query.filter(TBProxy.protocol == protocol)
@@ -121,10 +139,20 @@ class RDBDbUtil(BaseDbUtil):
             query = query.filter(TBProxy.anonymous == anonymous)
         if domestic:
             query = query.filter(TBProxy.domestic == domestic)
-        if min_score is not None:
-            query = query.filter(TBProxy.score >= min_score)
-        if max_score is not None:
-            query = query.filter(TBProxy.score <= max_score)
+        if min_score is not None and max_score is not None and min_score == max_score:
+            query = query.filter(TBProxy.score == min_score)
+        else:
+            if min_score is not None:
+                query = query.filter(TBProxy.score >= min_score)
+            if max_score is not None:
+                query = query.filter(TBProxy.score <= max_score)
+        if min_speed is not None and max_speed is not None and min_speed == max_speed:
+            query = query.filter(TBProxy.speed == min_speed)
+        else:
+            if min_speed is not None:
+                query = query.filter(TBProxy.speed >= min_speed)
+            if max_speed is not None:
+                query = query.filter(TBProxy.speed <= max_speed)
         return query
 
     def to_storedproxy(self, proxy: TBProxy) -> StoredProxy | None:

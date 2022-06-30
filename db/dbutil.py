@@ -21,6 +21,7 @@ def default_update_cb(speed: float, anonymous: Anonymous):
         return i
     return cb
 
+
 class DbUtil(merge_meta(BaseDbUtil, Singleton)):
     def __init__(self):
         self.db: BaseDbUtil
@@ -92,33 +93,43 @@ class DbUtil(merge_meta(BaseDbUtil, Singleton)):
         return await self.db.update_speed(proxy, new_speed)
 
     async def gets(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
-                   limit: int = 100, offset: int = 0,  min_score: int = None, max_score: int = None) -> list[StoredProxy]:
+                   limit: int = 100, offset: int = 0,  min_score: int = None, max_score: int = None, min_speed: float = None, max_speed: float = None) -> list[StoredProxy]:
         if not limit or limit <= 0:
             limit = 100
             logger.debug(f"set limit to {limit}")
         if not offset or offset < 0:
             offset = 0
             logger.debug(f"set offset to {offset}")
-        if min_score is not None and max_score is not None and max_score < min_score:
-            logger.debug(f'min{min_score} > max{max_score}.')
+        if not self._check_min_max(min_score, max_score):
+            logger.debug(f'score min {min_score} > max {max_score}.')
             return []
-        return await self.db.gets(protocol, ip, port, verify, anonymous, domestic, limit, offset, min_score, max_score)
+        if not self._check_min_max(min_speed, max_speed):
+            logger.debug(f'speed min {min_score} > max {max_score}.')
+            return []
+        return await self.db.gets(protocol, ip, port, verify, anonymous, domestic, limit, offset, min_score, max_score, min_speed, max_speed)
 
-    async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None, min_score: int = None, max_score: int = None) -> int:
-        if min_score is not None and max_score is not None and max_score < min_score:
-            logger.debug(f'min{min_score} > max{max_score}.')
-            return 0
-        return await self.db.count(protocol, ip, port, verify, anonymous, domestic, min_score, max_score)
+    async def count(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
+                    min_score: int = None, max_score: int = None, min_speed: float = None, max_speed: float = None) -> int:
+        if not self._check_min_max(min_score, max_score):
+            logger.debug(f'score min {min_score} > max {max_score}.')
+            return []
+        if not self._check_min_max(min_speed, max_speed):
+            logger.debug(f'speed min {min_score} > max {max_score}.')
+            return []
+        return await self.db.count(protocol, ip, port, verify, anonymous, domestic, min_score, max_score, min_speed, max_speed)
 
     async def gets_random(self, protocol: Protocol = None, ip: str = None, port: int = None, verify: Verify = None, anonymous: Anonymous = None, domestic: bool = None,
-                          limit: int = 100, min_score: int = None, max_score: int = None) -> list[StoredProxy]:
+                          limit: int = 100, min_score: int = None, max_score: int = None, min_speed: float = None, max_speed: float = None) -> list[StoredProxy]:
         if not limit or limit < 0:
             limit = 100
             logger.debug(f"set limit to {limit}")
-        if min_score is not None and max_score is not None and max_score < min_score:
-            logger.debug(f'min{min_score} > max{max_score}.')
+        if not self._check_min_max(min_score, max_score):
+            logger.debug(f'score min {min_score} > max {max_score}.')
             return []
-        return await self.db.gets_random(protocol, ip, port, verify, anonymous, domestic, limit, min_score, max_score)
+        if not self._check_min_max(min_speed, max_speed):
+            logger.debug(f'speed min {min_score} > max {max_score}.')
+            return []
+        return await self.db.gets_random(protocol, ip, port, verify, anonymous, domestic, limit, min_score, max_score, min_speed, max_speed)
 
     async def delete(self, proxy: StoredProxy):
         if not proxy:
