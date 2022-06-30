@@ -41,7 +41,7 @@ class TestValidService(IsolatedAsyncioTestCase):
         self.assertEqual(len(proxies), 0)
 
     @skip('return self._db._update(...)')
-    @patch.object(Valid, 'async_req', lambda *_, **__: mock_async())
+    @patch.object(Valid, 'async_valid', lambda *_, **__: mock_async())
     @patch.object(DbUtil, '_update', lambda *_: mock_proxy())
     async def test_update(self):
         pass

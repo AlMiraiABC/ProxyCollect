@@ -24,6 +24,7 @@ class IntEnum(TypeDecorator):
     >>> column_name = Column('column_name', IntEnum(MyEnum))
     """
     impl = Integer
+    cache_ok = True
 
     def __init__(self, enum_type: Enum, *args, **kwargs):
         super().__init__(*args, **kwargs)

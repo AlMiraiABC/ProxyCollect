@@ -103,11 +103,12 @@ class QueryService:
                                         check_count, min_score)
         for proxy in proxies:
             # TODO: 2022-06-19 support different check methods.
-            speed, anon = await self._valid.async_req(proxy)
+            speed, anon = await self._valid.async_valid(proxy)
             logger.debug(f'Proxy {proxy.id} speed: {speed} anonymous: {anon}')
             if self._backfill:
                 await self._db._update(proxy, default_update_cb(speed, anon))
-                logger.debug(f'backfill {proxy.id}.')
+                logger.debug(
+                    f'backfill {{id:{proxy.id}, speed: {speed}, anonymous: {anonymous.name}}}.')
             if speed > 0:
                 if not anonymous:
                     return proxy

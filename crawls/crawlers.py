@@ -397,7 +397,7 @@ async def ip89(page_start: int = 1, page_end: int = 1, headers={}, timeout: int 
     proxies: list[Proxy] = []
     succs: list[str] = []
     fails: list[str] = []
-    _p = to_aiohttp_proxy(await get_one_proxy(Protocol.HTTP))
+    _p = to_aiohttp_proxy(await get_one_proxy(Protocol.HTTPS))
     baseurl = "https://www.89ip.cn/"
     async with ClientSession() as session:
         for page in range(page_start, page_end+1):
@@ -442,7 +442,7 @@ async def ip89(page_start: int = 1, page_end: int = 1, headers={}, timeout: int 
 
 async def ip89_api(num: int = 60, port: int = None, exclude_port: int = None, address: str = '', exclude_addr: str = '', isp: str = '',
                    headers: dict = {}, timeout: int = 10, **kwargs) -> CRAWL_RET:
-    """89免费代理-API http://www.89ip.cn/api.html
+    """89免费代理-API https://www.89ip.cn/ti.html
 
     :param num: The count number. Default to `60.
     :param port: Specified port. Default to unlimit.
@@ -482,7 +482,7 @@ async def ip89_api(num: int = 60, port: int = None, exclude_port: int = None, ad
                         _port = result[1].strip()
                     except:
                         logger.error(
-                            f"Cannot convert {result} when get {url}.", exc_info=True)
+                            f"Cannot convert {result} when get {url}{params}.", exc_info=True)
                         continue
                     else:
                         proxy = Proxy(Protocol.HTTP, _ip, _port, Verify.HTTP,
