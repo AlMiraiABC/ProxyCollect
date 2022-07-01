@@ -3,17 +3,22 @@
 ## Features
 
 - [x] Crawl
-  - [x] kuaidaili
-  - [x] nimadaili
 - [x] Valid
   - [x] http
   - [x] https
   - [ ] socks4
   - [ ] socks5
-- [ ] Query
+- [x] Command
+  - [x] crawl
+  - [x] query
+  - [x] valid
 - [x] DB
   - [x] mysql
   - [ ] redis
+- [ ] Web
+  - [x] Query
+  - [ ] Auth
+  - [ ] Control Panel
 
 ## Quick Start
 
