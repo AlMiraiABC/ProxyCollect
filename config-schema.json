@@ -1,0 +1,202 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "ProxyCollect2.config-schema.json",
+    "description": "Schema for ProxyCollect 2.0 configuration file",
+    "title": "ProxyCollect2.0 config schema",
+    "type": "object",
+    "properties": {
+        "version": {
+            "type": "string",
+            "description": "Version of the configuration file",
+            "default": "2.0"
+        },
+        "db": {
+            "type": "object",
+            "description": "Database configuration",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "rdb"
+                    ],
+                    "description": "Type of database"
+                },
+                "rdb": {
+                    "type": "object",
+                    "description": "RDB database configuration",
+                    "properties": {
+                        "engine": {
+                            "type": "string",
+                            "description": "Database engine",
+                            "default": "mysql+pymysql"
+                        },
+                        "host": {
+                            "type": "string",
+                            "description": "Hostname of the database",
+                            "default": "localhost"
+                        },
+                        "port": {
+                            "type": "integer",
+                            "description": "Port of the database",
+                            "minimum": 0,
+                            "maximum": 65535,
+                            "default": 3306
+                        },
+                        "username": {
+                            "type": "string",
+                            "description": "Username of the database",
+                            "default": "root"
+                        },
+                        "password": {
+                            "type": "string",
+                            "description": "Password of the database"
+                        },
+                        "db": {
+                            "type": "string",
+                            "description": "Name of the database",
+                            "default": "proxy_ip"
+                        },
+                        "charset": {
+                            "type": "string",
+                            "description": "Charset of the database",
+                            "default": "utf8mb4"
+                        },
+                        "url": {
+                            "type": "string",
+                            "description": "URL of the database. Combined by other configs automaticallly.",
+                            "default": "mysql+pymysql://root:@localhost:3306/proxy_ip?charset=utf8mb4"
+                        },
+                        "extra": {
+                            "type": "object",
+                            "description": "Other parameters for the database connection.\nSee: https://docs.sqlalchemy.org/en/14/core/engines.html?highlight=create_engine#sqlalchemy.create_engine.params",
+                            "default": {}
+                        }
+                    }
+                }
+            }
+        },
+        "valid": {
+            "type": "object",
+            "description": "Validator configuration",
+            "properties": {
+                "public_ip": {
+                    "type": "string",
+                    "description": "Public IP of the server"
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "Timeout seconds to wait when valid.",
+                    "minimum": 5,
+                    "default": 5
+                },
+                "semaphore": {
+                    "type": "integer",
+                    "description": "The maximum number of concurrent.",
+                    "minimum": 1,
+                    "default": 50
+                },
+                "patch": {
+                    "type": "integer",
+                    "description": "Number of each epoch to get from db.",
+                    "minimum": 1,
+                    "default": 500
+                }
+            }
+        },
+        "score": {
+            "type": "object",
+            "description": "Proxy score configuration.",
+            "properties": {
+                "init": {
+                    "type": "integer",
+                    "description": "Default score value.",
+                    "default": 20
+                },
+                "increase": {
+                    "type": "integer",
+                    "description": "Increase step value if valid successfully.",
+                    "default": 1
+                },
+                "decrease": {
+                    "type": "integer",
+                    "description": "Decrease step value if valid failed.",
+                    "default": 1
+                },
+                "threshold": {
+                    "type": "integer",
+                    "description": "Proxy unavailable score value if less than this.",
+                    "default": 0
+                },
+                "delete": {
+                    "type": "integer",
+                    "description": "Whether delete this proxy if score less than threshold.",
+                    "default": false
+                },
+                "ceiling": {
+                    "type": "integer",
+                    "description": "The maximum score value.",
+                    "default": 50
+                },
+                "nadir": {
+                    "type": "integer",
+                    "description": "The minimum score value.",
+                    "default": -20
+                }
+            }
+        },
+        "crawls": {
+            "type": "object",
+            "description": "Crawls configuration",
+            "properties": {
+                "crawlers": {
+                    "type": "array",
+                    "description": "Crawlers",
+                    "items": {
+                        "type": "object",
+                        "description": "Crawler",
+                        "properties": {
+                            "callable": {
+                                "type": "string",
+                                "description": "Full-qualified name of crawler to call."
+                            },
+                            "args": {
+                                "type": "array",
+                                "description": "Arguments of callable."
+                            },
+                            "kwargs": {
+                                "type": "object",
+                                "description": "Keyword arguments of callable."
+                            }
+                        },
+                        "required": [
+                            "callable"
+                        ]
+                    }
+                }
+            }
+        },
+        "query": {
+            "type": "object",
+            "description": "Query API configuration",
+            "properties": {
+                "max_ps": {
+                    "type": "integer",
+                    "description": "Maximum number of proxies to return.",
+                    "minimum": 1,
+                    "default": 100
+                },
+                "backfill": {
+                    "type": "boolean",
+                    "description": "Whether to backfill the database.",
+                    "default": false
+                },
+                "default_ps": {
+                    "type": "integer",
+                    "description": "Default page size.",
+                    "minimum": 1,
+                    "default": 20
+                }
+            }
+        }
+    }
+}
