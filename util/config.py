@@ -107,7 +107,7 @@ class CrawlsConfig:
     Environment variables are not supported.
     """
     def get(k: str, d: any):
-        return ConfigUtil().get_key(f'crawl.{k}', None, d)
+        return ConfigUtil().get_key(f'crawls.{k}', None, d)
 
     CRAWLERS: list[CrawlsCrawlerConfig] = get('crawlers', [])
     """
