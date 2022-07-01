@@ -15,7 +15,8 @@
         "crawl",
         "services",
         "command",
-        "query"
+        "query",
+        "valid"
     ],
     "python.envFile": "${workspaceFolder}/.env",
     "autoDocstring.docstringFormat": "sphinx-notypes"

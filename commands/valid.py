@@ -5,8 +5,9 @@ from getopt import GetoptError, getopt
 from al_utils.console import ColoredConsole
 from al_utils.logger import Logger
 from prettytable import PrettyTable
+from commands.helper import to_bool, to_int
 from services.valid_service import ValidService
-from util.config import ValidConfig
+from util.config import ScoreConfig, ValidConfig
 from util.config_util import ConfigUtil
 from util.ip import is_formed_ipv4
 from util.valid import Valid
@@ -16,10 +17,14 @@ logger = Logger(__file__).logger
 
 HELP = """PARAM:
 -h, --help                  Print help message.
--s, --semaphore <semaphore> The maximum number of concurrent.
+-s, --semaphore <number>    The maximum number of concurrent.
                             Default is 50.
--p, --patch <patch>         Number of each epoch to valid.
-                            Default is 500."""
+-p, --patch <number>        Number of each epoch to valid.
+                            Default is 500.
+-d, --delete <bool>         Whether delete proxies which score less than nadir.
+                            Default to False.
+-n, --nadir <number>        The minimum score value.
+                            Default is -20."""
 
 
 def help(c=0):
@@ -57,14 +62,18 @@ def main(argv: list[str]):
     cf = 'config.json'
     pubip: str = None
     timeout = ValidConfig.TIMEOUT
+    delete = ScoreConfig.DELETE
+    nadir = ScoreConfig.NADIR
     try:
-        opts, _ = getopt(argv, "hc:s:p:i:t:", [
+        opts, _ = getopt(argv, "hc:s:p:i:t:d:n", [
                          "help",
                          "config=",
                          "semaphore=",
                          "patch=",
                          "pubip=",
-                         "timeout="])
+                         "timeout=",
+                         "delete=",
+                         "nadir="])
     except GetoptError:
         help(1)
     for opt, arg in opts:
@@ -83,12 +92,16 @@ def main(argv: list[str]):
                 pubip = arg
             case '-t' | '--timeout':
                 timeout = int(arg)
+            case '-d' | '--delete' | '--del':
+                delete = to_bool(arg)
+            case '-n' | 'nadir':
+                nadir = to_int(arg)
     if timeout < 1:
         timeout = ValidConfig.TIMEOUT
     if not pubip:
         pubip = ValidConfig.PUBLIC_IP
     ConfigUtil(cf)
-    service = ValidService(Valid(pubip, timeout), patch, sem)
+    service = ValidService(Valid(pubip, timeout), patch, sem, delete, nadir)
     logger.info(f'Start valid with patch {patch} and semaphore {sem}.')
     ret = asyncio.run(service.run(_cb))
     logger.info(f'Valid finished.')

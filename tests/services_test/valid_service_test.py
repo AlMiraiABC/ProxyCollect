@@ -26,7 +26,7 @@ async def mock_async(*args):
 @patch.object(Valid, '__init__', lambda *_, **__: None)
 class TestValidService(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.service = ValidService()
+        self.service = ValidService(Valid('127.0.0.1', 30))
 
     @patch.object(DbUtil, 'gets', lambda *_, **__: mock_proxies(5))
     async def test_get_patch(self):
@@ -81,15 +81,3 @@ class TestValidService(IsolatedAsyncioTestCase):
         self.assertEqual(len(proxies), c)
         self.assertEqual(len(fails), f)
         self.assertEqual(len(timeouts), t)
-
-    @skip("How to test")
-    async def test_pause(self):
-        pass
-
-    @skip("How to test")
-    async def test_stop(self):
-        pass
-
-    @skip("")
-    async def test_run(self):
-        pass

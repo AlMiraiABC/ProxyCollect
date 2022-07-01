@@ -58,3 +58,27 @@ def to_tuple(v: str, t: _T = int, sep: str = ',') -> tuple[_T, _T]:
     except Exception as ex:
         print(ex)
         return (min, max)
+
+
+def to_bool(v: str) -> bool:
+    """
+    Whether v is 'T', 'TRUE'(case ignore) or non-0 numbers.
+
+    >>> to_bool('')
+    False
+    >>> to_bool('0')
+    False
+    >>> to_bool(0)
+    False
+    >>> to_bool('t')
+    True
+    >>> to_bool('true')
+    True
+    """
+    if not v:
+        return False
+    if v in ['0',0]:
+        return False
+    if v.upper() in ['T', 'True']:
+        return True
+    return False

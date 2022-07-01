@@ -12,7 +12,15 @@ logger = Logger(__file__).logger
 
 
 class ValidService:
-    def __init__(self, valid: Valid, patch: int = 500, semaphore: int = 50):
+    def __init__(self, valid: Valid, patch: int = 500, semaphore: int = 50,
+                 delete: bool = False, nadir: int = -20):
+        """
+        :param valid: :class:`Valid` instance.
+        :param patch: Patch size in each epoch.
+        :param semaphore: Maximum concurrent size.
+        :param delete: Whether delete proxies which score less than :param:`nadir`.
+        :param nadir: The proxies while be deleted if it's score less than :param:`nadir`.
+        """
         self.patch = patch if patch >= 50 else 500
         self.semaphore = semaphore if semaphore > 10 else 50
         self._cursor: int = 0
@@ -23,6 +31,8 @@ class ValidService:
         self._db = DbUtil()
         self._valid = valid
         self._queue: Queue[StoredProxy] = Queue(patch*1.2)
+        self._delete = delete
+        self._nadir = nadir
 
     async def get_patch(self) -> list[StoredProxy]:
         """Get next patch proxies."""
@@ -42,6 +52,9 @@ class ValidService:
         if not ret:
             logger.warning(f'Update proxy failed from {proxy} to '
                            f'{{anonymous: {anonymous}, speed: {speed}}}')
+            return ret
+        if self._delete and ret.score <= self._nadir:
+            self._db.delete(ret)
         return ret
 
     async def valid_proxies(self):
