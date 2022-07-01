@@ -19,14 +19,15 @@ async def mock_async_ret(ret):
 pmsgs: list[str] = []
 
 
-def mock_cc_print(info, *args, **kwargs):
+def mock_cc_print(info, *_, **__):
     pmsgs.append(info)
 
 
 @patch.object(ColoredConsole, 'print', mock_cc_print)
 class TestQuery(IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        msgs = []
+        global pmsgs
+        pmsgs = []
 
     def test_save_to_txt(self):
         N = 5

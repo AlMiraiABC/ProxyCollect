@@ -28,8 +28,10 @@ class QueryService:
                   domestic: bool = None,
                   limit: int = 1,
                   skip: int = 0,
-                  min_score: int = 20
-                  ) -> list[Proxy]:
+                  min_score: int = 20,
+                  max_score: int = None,
+                  min_speed: int = 0,
+                  max_speed: int = None) -> list[Proxy]:
         """
         Get proxies.
         """
@@ -44,7 +46,8 @@ class QueryService:
         if not skip or skip < 0:
             skip = 0
             logger.debug(f'set skip to {skip}')
-        return await self._db.gets(protocol, ip, port, verify, anonymous, domestic, limit, skip, min_score)
+        return await self._db.gets(protocol, ip, port, verify, anonymous, domestic, limit, skip,
+                                   min_score, max_score, min_speed, max_speed)
 
     async def get_count(self,
                         protocol: Protocol | str = None,
@@ -53,13 +56,17 @@ class QueryService:
                         verify: Verify | str = None,
                         anonymous: Anonymous | str = None,
                         domestic: bool = None,
-                        min_score: int = 20) -> int:
+                        min_score: int = 20,
+                        max_score: int = None,
+                        min_speed: int = 0,
+                        max_speed: int = None) -> int:
         """
         Get count of proxies.
         """
         protocol, ip, port, verify, anonymous, domestic = self._verify_query_params(
             protocol, ip, port, verify, anonymous, domestic)
-        return await self._db.count(protocol, ip, port, verify, anonymous, domestic, min_score)
+        return await self._db.count(protocol, ip, port, verify, anonymous, domestic,
+                                    min_score, max_score, min_speed, max_speed)
 
     async def get_random(self,
                          protocol: Protocol | str = None,
@@ -69,15 +76,18 @@ class QueryService:
                          anonymous: Anonymous | str = None,
                          domestic: bool = None,
                          count: int = 1,
-                         min_score: int = 20
-                         ) -> list[Proxy]:
+                         min_score: int = 20,
+                         max_score: int = None,
+                         min_speed: int = 0,
+                         max_speed: int = None) -> list[Proxy]:
         protocol, ip, port, verify, anonymous, domestic = self._verify_query_params(
             protocol, ip, port, verify, anonymous, domestic)
         if not count or count < 1:
             count = 1
             logger.debug(f'set count to {count}.')
         return await self._db.gets_random(
-            protocol, ip, port, verify, anonymous, domestic, count, min_score)
+            protocol, ip, port, verify, anonymous, domestic, count,
+            min_score, max_score, min_speed, max_speed)
 
     async def get_check(self,
                         protocol: Protocol | str = None,
@@ -87,7 +97,10 @@ class QueryService:
                         anonymous: Anonymous | str = None,
                         domestic: bool = None,
                         check_count: int = 1,
-                        min_score: int = 20) -> Proxy | None:
+                        min_score: int = 20,
+                        max_score: int = None,
+                        min_speed: int = 0,
+                        max_speed: int = None) -> Proxy | None:
         """
         Get a checked proxy.
 
@@ -100,7 +113,7 @@ class QueryService:
             check_count = 1
             logger.debug(f'set check_count to {check_count}.')
         proxies = await self.get_random(protocol, ip, port, verify, anonymous, domestic,
-                                        check_count, min_score)
+                                        check_count, min_score, max_score, min_speed, max_speed)
         for proxy in proxies:
             # TODO: 2022-06-19 support different check methods.
             speed, anon = await self._valid.async_valid(proxy)

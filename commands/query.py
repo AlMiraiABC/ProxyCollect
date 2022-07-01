@@ -1,10 +1,9 @@
 import asyncio
 import json
 import os
+import sys
 from enum import Enum
 from getopt import GetoptError, getopt
-import sys
-from typing import Callable
 
 from al_utils.console import ColoredConsole
 from al_utils.logger import Logger
@@ -17,6 +16,7 @@ from util.converter import to_dict, to_url
 from util.ip import is_formed_ipv4
 from util.valid import Valid
 
+from commands.helper import to_enum, to_int, to_tuple
 
 logger = Logger(__file__).logger
 HELP = """PARAM:
@@ -44,7 +44,10 @@ HELP = """PARAM:
                                 `skip` is ignored.
                             * count: Get the count number of query.
                                 `export` and `save` are ignored.
--t, --ts <number>       Threadshold of score. The minimum score.
+--score <[min][,max]>       Score. Integer.
+                            Default is `20,None`.
+--speed <[min][,max]>       Speed seconds. Float.
+                            Default is `0,None`
 -o, --output <type>     Result output format.
                             table, json, url
                             Default is `table`.
@@ -60,25 +63,6 @@ def help(c=0):
     """Print help message then exit."""
     print(HELP)
     exit(c)
-
-
-def to_enum(t: type[Enum], v: str):
-    try:
-        return t[v.upper()]
-    except:
-        print(f'Unexpected {t.__name__.lower()} type {v}.')
-        return None
-
-
-def to_int(v: str, tip: str = '', comp: Callable[[int], bool] = lambda _: True):
-    try:
-        i = int(v)
-        if not comp(i):
-            raise ValueError(tip)
-        return i
-    except:
-        print(f"Unexpected number {v}. {tip}")
-        return None
 
 
 def to_table(proxies: list[Proxy]):
@@ -132,7 +116,8 @@ def main(argv: list):
                              "num=",
                              "skip=",
                              "query=",
-                             "th=",
+                             "score=",
+                             "speed=",
                              "output=",
                              "export="
                          ])
@@ -150,7 +135,8 @@ def main(argv: list):
     query: QueryType = QueryType.QUERY
     output: OutputType = OutputType.TABLE
     export: str = None  # path
-    ts: int = ScoreConfig.INIT
+    score = (None, None)
+    speed = (None, None)
     for opt, arg in opts:
         match opt:
             case '-h' | '--help':
@@ -179,8 +165,12 @@ def main(argv: list):
                 skip = to_int(arg, 'Skip must >0.', lambda x: x > 0)
             case '-q' | '--query':
                 query = to_enum(QueryType, arg)
-            case '-t' | '-ts':
-                ts = to_int(arg)
+            case '--score':
+                score = to_tuple(arg)
+                if score == (None, None):
+                    score == (ScoreConfig.INIT, None)
+            case '--speed':
+                speed = to_tuple(arg, float)
             case '-o' | '--output':
                 output = to_enum(OutputType, arg)
             case '-x' | '--export':
@@ -196,8 +186,8 @@ def main(argv: list):
     ColoredConsole.info('Starting query...')
     match query:
         case QueryType.COUNT:
-            c = asyncio.run(service.get_count(protocol, ip, port, verify,
-                                              anonymous, domestic, ts))
+            c = asyncio.run(service.get_count(protocol, ip, port, verify, anonymous, domestic,
+                                              score[0], score[1], speed[0], speed[1]))
             ColoredConsole.print(f'COUNT: {c}.')
             return
         case QueryType.CHECK:
@@ -205,14 +195,14 @@ def main(argv: list):
                 num = 20
                 logger.debug(f'set num to {num}.')
                 ColoredConsole.debug(f'Set num to {num}.')
-            proxies = [asyncio.run(service.get_check(protocol, ip, port, verify,
-                                                     anonymous, domestic, num, ts))]
+            proxies = [asyncio.run(service.get_check(protocol, ip, port, verify, anonymous, domestic, num,
+                                                     score[0], score[1], speed[0], speed[1]))]
         case QueryType.RANDOM:
-            proxies = asyncio.run(service.get_random(protocol, ip, port, verify,
-                                                     anonymous, domestic, num, ts))
+            proxies = asyncio.run(service.get_random(protocol, ip, port, verify, anonymous, domestic, num,
+                                                     score[0], score[1], speed[0], speed[1]))
         case _:
-            proxies = asyncio.run(service.get(protocol, ip, port, verify,
-                                              anonymous, domestic, num, skip, ts))
+            proxies = asyncio.run(service.get(protocol, ip, port, verify, anonymous, domestic, num, skip,
+                                              score[0], score[1], speed[0], speed[1]))
     ColoredConsole.success(
         f"Got {len(proxies)} {'proxies' if len(proxies)>1 else 'proxy'}.")
     # endregion
