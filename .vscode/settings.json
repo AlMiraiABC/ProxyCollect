@@ -16,7 +16,8 @@
         "services",
         "command",
         "query",
-        "valid"
+        "valid",
+        "web"
     ],
     "python.envFile": "${workspaceFolder}/.env",
     "autoDocstring.docstringFormat": "sphinx-notypes"

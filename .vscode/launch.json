@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "App",
+            "type": "python",
+            "request": "launch",
+            "program": "app.py",
+            "jinja": true,
+            "justMyCode": false
+        },
+        // Test panel.
+        {
             "name": "Debug Unit Tests",
             "type": "python",
             "request": "launch",
