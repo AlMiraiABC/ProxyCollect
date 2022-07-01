@@ -4,6 +4,7 @@ tests
 .vscode
 .coverage
 coverage.*
+requirements.dev.txt
 **/*.log.*
 **/__pycache__
 **/.classpath
