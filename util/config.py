@@ -119,7 +119,7 @@ class CrawlsConfig:
 
 class QueryConfig:
     def get(k: str, d: any):
-        return ConfigUtil().get_key(f'api.{k}', f'_API_{k.upper()}', d)
+        return ConfigUtil().get_key(f'query.{k}', f'_QUERY_{k.upper()}', d)
 
     MAX_PS: int = int(get('max_limit', 100))
     """Maximum total number of queried proxies in one page."""
