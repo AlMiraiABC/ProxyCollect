@@ -1,0 +1,25 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@1.5.0
+
+jobs:
+  unittest:
+    docker:
+      - image: cimg/python:3.10.4
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+          pip-dependency-file: requirements.txt
+      - python/install-packages:
+          pkg-manager: pip
+          pip-dependency-file: requirements.dev.txt
+      - run:
+          name: Run tests
+          command: python -m coverage run --omit "**/*/__init__.py","tests/**/*" -m unittest discover ./tests -p *_test.py
+
+workflows:
+  unittest:
+    jobs:
+      - unittest
