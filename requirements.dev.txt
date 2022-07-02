@@ -1,3 +1,4 @@
 aioresponses
 autopep8
 coverage
+beautifulsoup4

@@ -1,6 +1,7 @@
 aiohttp
 al-utils-almirai
+beautifulsoup4
+prettytable
 pymysql
 requests
 sqlalchemy
-prettytable
